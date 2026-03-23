@@ -1,27 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #0A0A0F;
-  --color-bg-secondary: #12121A;
-  --color-bg-tertiary: #1A1A25;
-  --color-bg-card: #151520;
-  --color-bg-hover: #1E1E2E;
-  --color-border: #2A2A3A;
-  --color-border-light: #3A3A4A;
-  --color-text-primary: #E8E8F0;
-  --color-text-secondary: #8888A0;
-  --color-text-muted: #5A5A70;
+  --color-bg-primary: #050508;
+  --color-bg-secondary: #0A0A10;
+  --color-bg-tertiary: #111118;
+  --color-bg-card: #0D0D14;
+  --color-bg-elevated: #161620;
+  --color-bg-hover: rgba(255, 255, 255, 0.04);
+  --color-bg-active: rgba(255, 255, 255, 0.06);
+
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-light: rgba(255, 255, 255, 0.10);
+  --color-border-focus: rgba(255, 255, 255, 0.16);
+
+  --color-text-primary: #F0F0F6;
+  --color-text-secondary: #8A8AA3;
+  --color-text-muted: #505068;
+  --color-text-ghost: #363650;
+
   --color-accent-snake: #22C55E;
   --color-accent-flappy: #F97316;
   --color-accent-chess: #EAB308;
   --color-accent-cartpole: #3B82F6;
   --color-accent-2048: #A855F7;
+
   --color-error: #EF4444;
   --color-success: #22C55E;
   --color-warning: #EAB308;
+
   --font-family-mono: 'JetBrains Mono', monospace;
-  --font-family-sans: 'Outfit', system-ui, sans-serif;
+  --font-family-sans: 'Inter', system-ui, sans-serif;
 }
 
 * {
@@ -44,9 +53,68 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* Scrollbar — Linear style */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-border-light); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
 .font-mono { font-family: var(--font-family-mono); }
+
+/* Card inner highlight — Linear signature */
+.card-inset {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Gradient mesh background */
+.mesh-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
+}
+
+/* Per-game glow utilities */
+.glow-snake { box-shadow: 0 0 20px rgba(34, 197, 94, 0.12), 0 0 60px rgba(34, 197, 94, 0.04); }
+.glow-flappy { box-shadow: 0 0 20px rgba(249, 115, 22, 0.12), 0 0 60px rgba(249, 115, 22, 0.04); }
+.glow-cartpole { box-shadow: 0 0 20px rgba(59, 130, 246, 0.12), 0 0 60px rgba(59, 130, 246, 0.04); }
+.glow-2048 { box-shadow: 0 0 20px rgba(168, 85, 247, 0.12), 0 0 60px rgba(168, 85, 247, 0.04); }
+.glow-chess { box-shadow: 0 0 20px rgba(234, 179, 8, 0.12), 0 0 60px rgba(234, 179, 8, 0.04); }
+
+/* Glass card effect */
+.glass {
+  background: rgba(13, 13, 20, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Gradient border mask */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}

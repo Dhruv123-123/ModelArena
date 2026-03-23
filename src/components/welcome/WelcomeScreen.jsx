@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import useGameStore, { GAMES } from '../../stores/useGameStore'
 
 const HERO_GAMES = [
@@ -10,16 +10,18 @@ const HERO_GAMES = [
   { id: 'chess', color: '#EAB308', label: 'Chess', emoji: '♟️' },
 ]
 
-const STEPS = [
-  { icon: '🎮', title: 'Pick a Game', desc: 'Choose from 5 classic environments, each teaching different ML concepts' },
-  { icon: '🧠', title: 'Design Your Model', desc: 'Stack layers visually — Dense, Conv2D, Dropout — and watch the network graph update live' },
-  { icon: '⚡', title: 'Train It', desc: 'One click to start. Watch real-time reward curves, loss plots, and epsilon decay' },
-  { icon: '👀', title: 'Watch It Play', desc: 'See your neural network make decisions with Q-value overlays. Or play against it yourself' },
-]
-
-function AnimatedNetwork({ width = 300, height = 200 }) {
+// Large animated neural network hero
+function HeroNetwork({ width, height }) {
   const canvasRef = useRef(null)
+  const mouseRef = useRef({ x: width / 2, y: height / 2 })
   const frameRef = useRef(0)
+
+  const handleMouseMove = useCallback((e) => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (rect) {
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -27,16 +29,22 @@ function AnimatedNetwork({ width = 300, height = 200 }) {
     const ctx = canvas.getContext('2d')
     let animId
 
-    const nodes = [
-      // Input layer
-      ...Array.from({ length: 4 }, (_, i) => ({ x: 50, y: 30 + i * 45, layer: 0, r: 5 })),
-      // Hidden 1
-      ...Array.from({ length: 6 }, (_, i) => ({ x: 120, y: 15 + i * 34, layer: 1, r: 5 })),
-      // Hidden 2
-      ...Array.from({ length: 6 }, (_, i) => ({ x: 190, y: 15 + i * 34, layer: 2, r: 5 })),
-      // Output
-      ...Array.from({ length: 3 }, (_, i) => ({ x: 260, y: 55 + i * 45, layer: 3, r: 5 })),
-    ]
+    const layerSizes = [6, 10, 14, 12, 8, 4]
+    const layerX = layerSizes.map((_, i) => (width * 0.1) + (i / (layerSizes.length - 1)) * (width * 0.8))
+    const layerColors = ['#22C55E', '#3B82F6', '#6366F1', '#A855F7', '#F97316', '#EAB308']
+
+    const nodes = []
+    layerSizes.forEach((size, li) => {
+      const spacing = Math.min(height * 0.7 / (size + 1), 36)
+      const startY = (height - (size - 1) * spacing) / 2
+      for (let i = 0; i < size; i++) {
+        nodes.push({
+          x: layerX[li], y: startY + i * spacing,
+          layer: li, color: layerColors[li],
+          baseX: layerX[li], baseY: startY + i * spacing,
+        })
+      }
+    })
 
     const edges = []
     for (const a of nodes) {
@@ -47,44 +55,92 @@ function AnimatedNetwork({ width = 300, height = 200 }) {
       }
     }
 
+    const particles = []
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        edge: edges[Math.floor(Math.random() * edges.length)],
+        t: Math.random(),
+        speed: 0.006 + Math.random() * 0.01,
+        size: 1 + Math.random() * 2,
+      })
+    }
+
     const draw = () => {
       frameRef.current++
       const t = frameRef.current / 60
+      const mx = mouseRef.current.x
+      const my = mouseRef.current.y
       ctx.clearRect(0, 0, width, height)
 
-      // Edges
+      for (const node of nodes) {
+        const dx = mx - node.baseX
+        const dy = my - node.baseY
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const influence = Math.max(0, 1 - dist / 250) * 10
+        node.x = node.baseX + (dx / (dist || 1)) * influence
+        node.y = node.baseY + (dy / (dist || 1)) * influence
+      }
+
+      // Edges — bezier curves
       for (const edge of edges) {
-        const pulse = Math.sin(t * 2 + edge.phase) * 0.5 + 0.5
-        ctx.strokeStyle = `rgba(99, 102, 241, ${0.05 + pulse * 0.15})`
+        const pulse = Math.sin(t * 1.5 + edge.phase) * 0.5 + 0.5
+        ctx.strokeStyle = `rgba(100, 100, 180, ${0.02 + pulse * 0.04})`
         ctx.lineWidth = 0.5
         ctx.beginPath()
+        const mx2 = (edge.from.x + edge.to.x) / 2
         ctx.moveTo(edge.from.x, edge.from.y)
-        ctx.lineTo(edge.to.x, edge.to.y)
+        ctx.quadraticCurveTo(mx2, edge.from.y, edge.to.x, edge.to.y)
         ctx.stroke()
+      }
 
-        // Data particle
-        const pt = (t * 0.3 + edge.phase / 6) % 1
-        const px = edge.from.x + (edge.to.x - edge.from.x) * pt
-        const py = edge.from.y + (edge.to.y - edge.from.y) * pt
-        ctx.fillStyle = `rgba(99, 102, 241, ${0.3 + pulse * 0.5})`
+      // Particles
+      for (const p of particles) {
+        p.t += p.speed
+        if (p.t > 1) {
+          p.edge = edges[Math.floor(Math.random() * edges.length)]
+          p.t = 0
+        }
+        const prog = p.t
+        const px = p.edge.from.x + (p.edge.to.x - p.edge.from.x) * prog
+        const py = p.edge.from.y + (p.edge.to.y - p.edge.from.y) * prog
+        const alpha = Math.sin(prog * Math.PI) * 0.6
+        ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`
         ctx.beginPath()
-        ctx.arc(px, py, 1.2, 0, Math.PI * 2)
+        ctx.arc(px, py, p.size, 0, Math.PI * 2)
         ctx.fill()
+      }
+
+      if (Math.random() < 0.08) {
+        particles.push({
+          edge: edges[Math.floor(Math.random() * edges.length)],
+          t: 0, speed: 0.006 + Math.random() * 0.01, size: 1 + Math.random() * 2,
+        })
+        if (particles.length > 80) particles.shift()
       }
 
       // Nodes
       for (const node of nodes) {
-        const pulse = Math.sin(t * 1.5 + node.x * 0.05 + node.y * 0.05) * 0.5 + 0.5
-        const colors = ['#22C55E', '#3B82F6', '#A855F7', '#F97316']
-        const color = colors[node.layer]
+        const pulse = Math.sin(t * 1.2 + node.baseX * 0.01 + node.baseY * 0.01) * 0.5 + 0.5
+        const dist = Math.sqrt((mx - node.x) ** 2 + (my - node.y) ** 2)
+        const hover = Math.max(0, 1 - dist / 150)
+        const r = 3 + pulse * 1.5 + hover * 3
 
-        ctx.shadowColor = color
-        ctx.shadowBlur = 4 + pulse * 6
-        ctx.fillStyle = color
+        ctx.shadowColor = node.color
+        ctx.shadowBlur = 8 + pulse * 10 + hover * 12
+        ctx.fillStyle = node.color
+        ctx.globalAlpha = 0.5 + pulse * 0.3 + hover * 0.2
         ctx.beginPath()
-        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2)
+        ctx.arc(node.x, node.y, r, 0, Math.PI * 2)
         ctx.fill()
+        ctx.globalAlpha = 1
         ctx.shadowBlur = 0
+
+        ctx.fillStyle = '#fff'
+        ctx.globalAlpha = 0.2 + hover * 0.5
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, r * 0.35, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.globalAlpha = 1
       }
 
       animId = requestAnimationFrame(draw)
@@ -94,22 +150,24 @@ function AnimatedNetwork({ width = 300, height = 200 }) {
     return () => cancelAnimationFrame(animId)
   }, [width, height])
 
-  return <canvas ref={canvasRef} width={width} height={height} className="opacity-60" />
+  return (
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      onMouseMove={handleMouseMove}
+      className="block"
+    />
+  )
 }
 
 export default function WelcomeScreen({ onDismiss }) {
   const { setActiveGame, setView } = useGameStore()
   const [hoveredGame, setHoveredGame] = useState(null)
 
-  const handleQuickStart = (gameId) => {
+  const handleStart = (gameId, view) => {
     setActiveGame(gameId)
-    setView('builder')
-    onDismiss()
-  }
-
-  const handleTryDemo = (gameId) => {
-    setActiveGame(gameId)
-    setView('play')
+    setView(view)
     onDismiss()
   }
 
@@ -118,181 +176,122 @@ export default function WelcomeScreen({ onDismiss }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="h-full w-full bg-bg-primary overflow-y-auto"
+      transition={{ duration: 0.4 }}
+      className="h-full w-full bg-bg-primary flex flex-col items-center justify-center relative overflow-hidden"
     >
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        {/* Hero */}
-        <div className="text-center mb-16 relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 opacity-30 pointer-events-none">
-            <AnimatedNetwork width={300} height={200} />
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+      {/* Mesh gradient background */}
+      <div className="absolute inset-0 mesh-bg" />
+
+      {/* Background network animation */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-auto opacity-60">
+        <HeroNetwork width={1100} height={600} />
+      </div>
+
+      {/* Gradient overlays for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-bg-primary/90 via-transparent to-bg-primary/95 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/60 via-transparent to-bg-primary/60 pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          <p className="text-xs font-mono tracking-[0.25em] text-text-muted mb-5 uppercase">Browser-Native Machine Learning</p>
+          <h1 className="text-7xl md:text-8xl font-extrabold tracking-tighter mb-5 leading-[0.9]">
+            <span className="text-text-primary">Model</span>
+            <span className="bg-gradient-to-r from-[#22C55E] via-[#3B82F6] to-[#A855F7] text-transparent bg-clip-text">Arena</span>
+          </h1>
+          <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed mb-2">
+            Build neural networks visually. Train them against classic games.
+            Watch them learn in real-time.
+          </p>
+          <p className="text-xs text-text-muted font-mono tabular-nums">No backend &middot; No API keys &middot; 100% in your browser</p>
+        </motion.div>
+
+        {/* Game pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="mt-8 flex gap-2 justify-center flex-wrap"
+        >
+          {HERO_GAMES.map((game) => {
+            const info = GAMES[game.id]
+            const isHovered = hoveredGame === game.id
+            return (
+              <motion.button
+                key={game.id}
+                onMouseEnter={() => setHoveredGame(game.id)}
+                onMouseLeave={() => setHoveredGame(null)}
+                onClick={() => handleStart(game.id, 'builder')}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2.5"
+                style={{
+                  background: isHovered ? game.color + '12' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isHovered ? game.color + '30' : 'rgba(255,255,255,0.06)'}`,
+                  color: isHovered ? game.color : '#8A8AA3',
+                  boxShadow: isHovered ? `0 4px 24px ${game.color}15` : 'none',
+                }}
+              >
+                <span className="text-lg">{game.emoji}</span>
+                <span>{game.label}</span>
+                <span className="text-xs opacity-50">{info.difficulty}</span>
+              </motion.button>
+            )
+          })}
+        </motion.div>
+
+        {/* CTA buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="mt-10 flex gap-3 justify-center"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(34, 197, 94, 0.2)' }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleStart('snake', 'builder')}
+            className="px-7 py-3 rounded-xl bg-white text-[#050508] font-semibold text-sm transition-all hover:bg-white/90"
           >
-            <h1 className="text-5xl font-bold tracking-tight mb-3 mt-24">
-              <span className="text-text-primary">Model</span>
-              <span className="text-accent-snake">Arena</span>
-            </h1>
-            <p className="text-lg text-text-secondary max-w-lg mx-auto leading-relaxed">
-              Build, train, and battle your own neural networks against classic games — entirely in the browser.
-            </p>
-            <p className="text-xs text-text-muted mt-2 font-mono">No backend. No API keys. No ML experience required.</p>
-          </motion.div>
-        </div>
-
-        {/* How it works */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-16"
-        >
-          <h2 className="text-sm uppercase tracking-widest text-text-muted text-center mb-6">How It Works</h2>
-          <div className="grid grid-cols-4 gap-4">
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.1 }}
-                className="text-center p-4 rounded-xl bg-bg-card border border-border"
-              >
-                <div className="text-2xl mb-2">{step.icon}</div>
-                <h3 className="text-sm font-semibold text-text-primary mb-1">{step.title}</h3>
-                <p className="text-[11px] text-text-secondary leading-relaxed">{step.desc}</p>
-                {i < 3 && (
-                  <div className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-text-muted text-lg">→</div>
-                )}
-              </motion.div>
-            ))}
-          </div>
+            Start Building
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleStart('snake', 'play')}
+            className="px-7 py-3 rounded-xl font-semibold text-sm transition-all text-text-secondary hover:text-text-primary"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            Watch a Demo
+          </motion.button>
         </motion.div>
 
-        {/* Game selector */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mb-16"
-        >
-          <h2 className="text-sm uppercase tracking-widest text-text-muted text-center mb-6">Choose Your Arena</h2>
-          <div className="grid grid-cols-5 gap-3">
-            {HERO_GAMES.map((game, i) => {
-              const info = GAMES[game.id]
-              return (
-                <motion.div
-                  key={game.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 + i * 0.08 }}
-                  whileHover={{ scale: 1.03, y: -4 }}
-                  onMouseEnter={() => setHoveredGame(game.id)}
-                  onMouseLeave={() => setHoveredGame(null)}
-                  className="rounded-xl border border-border bg-bg-card p-4 text-center cursor-pointer transition-colors hover:border-border-light group relative overflow-hidden"
-                  style={{
-                    boxShadow: hoveredGame === game.id ? `0 0 30px ${game.color}20` : 'none',
-                  }}
-                >
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ background: `radial-gradient(circle at 50% 0%, ${game.color}10, transparent 70%)` }}
-                  />
-                  <div className="relative">
-                    <div className="text-3xl mb-2">{game.emoji}</div>
-                    <h3 className="text-sm font-semibold text-text-primary">{game.label}</h3>
-                    <p className="text-[10px] text-text-muted mt-0.5">{info.difficulty} · {info.category}</p>
-                    <div className="mt-3 space-y-1.5">
-                      <button
-                        onClick={() => handleTryDemo(game.id)}
-                        className="w-full px-2 py-1.5 rounded-lg text-[10px] font-medium transition-colors"
-                        style={{ backgroundColor: game.color + '15', color: game.color, border: `1px solid ${game.color}30` }}
-                      >
-                        Watch Demo
-                      </button>
-                      <button
-                        onClick={() => handleQuickStart(game.id)}
-                        className="w-full px-2 py-1.5 rounded-lg text-[10px] font-medium text-text-secondary bg-bg-hover border border-border hover:text-text-primary transition-colors"
-                      >
-                        Build Model
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </motion.div>
-
-        {/* Featured pre-trained models */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="mb-16"
-        >
-          <h2 className="text-sm uppercase tracking-widest text-text-muted text-center mb-6">Pre-Trained Models — See What's Possible</h2>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { game: 'snake', name: 'SnakeBot v1', desc: 'Trained 500 episodes with a 2-layer Dense network. Scores ~15 consistently.', score: '~15', color: '#22C55E', tier: '🥉 Bronze' },
-              { game: 'cartpole', name: 'BalanceBot', desc: 'Solved CartPole (195+ steps) with just a simple 32-unit network.', score: '195+', color: '#3B82F6', tier: '🥇 Gold' },
-              { game: 'flappy', name: 'FlapNet', desc: 'Navigates 5-10 pipes with a 3-layer architecture. Can you do better?', score: '~8', color: '#F97316', tier: '🥉 Bronze' },
-            ].map((model, i) => (
-              <motion.div
-                key={model.game}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 + i * 0.1 }}
-                className="rounded-xl border border-border bg-bg-card p-4"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{GAMES[model.game].icon}</span>
-                  <div>
-                    <h3 className="text-sm font-semibold text-text-primary">{model.name}</h3>
-                    <span className="text-[10px] font-mono" style={{ color: model.color }}>{model.tier}</span>
-                  </div>
-                  <span className="ml-auto text-lg font-mono font-bold" style={{ color: model.color }}>{model.score}</span>
-                </div>
-                <p className="text-[11px] text-text-secondary leading-relaxed mb-3">{model.desc}</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleTryDemo(model.game)}
-                    className="flex-1 px-2 py-1.5 rounded-lg text-[10px] font-medium"
-                    style={{ backgroundColor: model.color + '15', color: model.color, border: `1px solid ${model.color}30` }}
-                  >
-                    Watch It Play
-                  </button>
-                  <button
-                    onClick={() => handleQuickStart(model.game)}
-                    className="flex-1 px-2 py-1.5 rounded-lg text-[10px] font-medium text-text-secondary bg-bg-hover border border-border hover:text-text-primary transition-colors"
-                  >
-                    Try to Beat It
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Quick start CTA */}
+        {/* Feature chips */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.1 }}
-          className="text-center pb-8"
+          transition={{ delay: 0.9, duration: 0.6 }}
+          className="mt-12 flex items-center justify-center gap-6 text-xs text-text-muted"
         >
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => { setActiveGame('snake'); setView('builder'); onDismiss() }}
-            className="px-8 py-3 rounded-xl bg-accent-snake text-bg-primary font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
-            Start Building — Snake (Recommended)
-          </motion.button>
-          <p className="text-[10px] text-text-muted mt-3">
-            No setup required. Everything runs in your browser.
-          </p>
+          {[
+            'Visual Model Builder',
+            'Real-Time Training',
+            'DQN & Supervised Learning',
+            'Human vs AI',
+            '5 Game Environments',
+          ].map((f, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-text-muted" />
+              {f}
+            </span>
+          ))}
         </motion.div>
       </div>
     </motion.div>

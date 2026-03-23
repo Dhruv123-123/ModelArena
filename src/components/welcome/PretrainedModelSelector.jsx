@@ -72,7 +72,7 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleLoadModel}
-            className="px-3 py-1.5 rounded-lg text-[11px] font-medium bg-accent-snake/10 text-accent-snake border border-accent-snake/20 hover:bg-accent-snake/20 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-accent-snake/10 text-accent-snake border border-accent-snake/20 hover:bg-accent-snake/20 transition-colors"
           >
             Load {config.name}
           </motion.button>
@@ -85,13 +85,13 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
                 transition={{ duration: 0.3 }}
               />
             </div>
-            <span className="text-[10px] font-mono text-text-muted">{progress?.percent || 0}%</span>
+            <span className="text-xs font-mono text-text-muted">{progress?.percent || 0}%</span>
           </div>
         ) : (
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleQuickTrain}
-            className="px-3 py-1.5 rounded-lg text-[11px] font-medium bg-bg-card border border-border text-text-secondary hover:text-text-primary transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-bg-card border border-border text-text-secondary hover:text-text-primary transition-colors"
           >
             Quick Train {config.name}
           </motion.button>
@@ -112,7 +112,7 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
             <span className="text-base">{game.icon}</span>
             <div>
               <h3 className="text-sm font-semibold text-text-primary">{config.name}</h3>
-              <p className="text-[10px] text-text-muted">{config.description}</p>
+              <p className="text-xs text-text-muted">{config.description}</p>
             </div>
           </div>
           {tier && (
@@ -126,20 +126,20 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
       <div className="px-4 py-3">
         {/* Architecture preview */}
         <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-          <span className="text-[10px] text-text-muted">Architecture:</span>
-          <span className="px-1.5 py-0.5 rounded bg-[#6366F1]/10 text-[#6366F1] text-[10px] font-mono">
+          <span className="text-xs text-text-muted">Architecture:</span>
+          <span className="px-1.5 py-0.5 rounded bg-[#6366F1]/10 text-[#6366F1] text-xs font-mono">
             Input [{game.inputSize}]
           </span>
           {config.layers.map((l, i) => (
             <span key={i} className="flex items-center gap-1">
-              <span className="text-text-muted text-[10px]">→</span>
-              <span className="px-1.5 py-0.5 rounded bg-[#3B82F6]/10 text-[#3B82F6] text-[10px] font-mono">
+              <span className="text-text-muted text-xs">→</span>
+              <span className="px-1.5 py-0.5 rounded bg-[#3B82F6]/10 text-[#3B82F6] text-xs font-mono">
                 {l.type === 'dense' ? `Dense(${l.units})` : l.type === 'dropout' ? `Drop(${l.rate})` : l.type}
               </span>
             </span>
           ))}
-          <span className="text-text-muted text-[10px]">→</span>
-          <span className="px-1.5 py-0.5 rounded bg-[#EF4444]/10 text-[#EF4444] text-[10px] font-mono">
+          <span className="text-text-muted text-xs">→</span>
+          <span className="px-1.5 py-0.5 rounded bg-[#EF4444]/10 text-[#EF4444] text-xs font-mono">
             Output [{game.outputSize}]
           </span>
         </div>
@@ -148,7 +148,7 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
         <AnimatePresence mode="wait">
           {status === 'idle' && (
             <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <p className="text-[11px] text-text-secondary mb-3">
+              <p className="text-xs text-text-secondary mb-3">
                 This pre-trained model needs to be generated first. Quick Train will train it in your browser
                 (~{config.hyperparams.maxEpisodes} episodes, usually takes 30-90 seconds).
               </p>
@@ -170,14 +170,14 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
           {status === 'checking' && (
             <motion.div key="checking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="text-center py-2">
-              <p className="text-[11px] text-text-muted">Checking for saved model...</p>
+              <p className="text-xs text-text-muted">Checking for saved model...</p>
             </motion.div>
           )}
 
           {status === 'training' && progress && (
             <motion.div key="training" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-mono text-text-muted">
+                <div className="flex justify-between text-xs font-mono text-text-muted">
                   <span>Episode {progress.episode}/{progress.totalEpisodes}</span>
                   <span>Best: {progress.bestScore.toFixed(1)}</span>
                   <span>ε: {progress.epsilon?.toFixed(3)}</span>
@@ -190,7 +190,7 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
                     transition={{ duration: 0.3 }}
                   />
                 </div>
-                <p className="text-[10px] text-text-muted text-center">
+                <p className="text-xs text-text-muted text-center">
                   Training in your browser... {progress.percent}% complete
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
             <motion.div key="ready" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <p className="text-[11px] text-success font-medium">Model ready!</p>
+                <p className="text-xs text-success font-medium">Model ready!</p>
               </div>
               <div className="flex gap-2">
                 <motion.button
@@ -224,7 +224,7 @@ export default function PretrainedModelSelector({ onModelReady, compact = false 
 
           {status === 'error' && (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <p className="text-[11px] text-error mb-2">Training failed. Try again.</p>
+              <p className="text-xs text-error mb-2">Training failed. Try again.</p>
               <button onClick={handleQuickTrain}
                 className="px-4 py-2 rounded-lg text-sm bg-error/10 text-error border border-error/20">
                 Retry

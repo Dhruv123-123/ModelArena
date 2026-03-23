@@ -36,10 +36,10 @@ export default function LayerExplainer({ layerType }) {
   if (!info) return null
 
   return (
-    <div className="bg-bg-card border border-border rounded-lg p-3 space-y-2">
-      <h4 className="text-xs font-semibold text-text-primary">{info.title}</h4>
-      <p className="text-[11px] text-accent-cartpole italic">{info.analogy}</p>
-      <p className="text-[11px] text-text-secondary leading-relaxed">{info.detail}</p>
+    <div className="bg-bg-card border border-border rounded-xl p-4 space-y-2.5">
+      <h4 className="text-sm font-semibold text-text-primary">{info.title}</h4>
+      <p className="text-xs text-accent-cartpole italic leading-relaxed">{info.analogy}</p>
+      <p className="text-xs text-text-secondary leading-relaxed">{info.detail}</p>
     </div>
   )
 }

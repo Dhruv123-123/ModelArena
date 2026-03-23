@@ -17,23 +17,30 @@ export default function HyperparamConfig() {
   const { hyperparams, setHyperparam, isTraining } = useTrainingStore()
 
   return (
-    <div className="bg-bg-card border border-border rounded-lg p-3">
-      <p className="text-[10px] uppercase tracking-widest text-text-muted mb-3">Hyperparameters</p>
-      <div className="space-y-2">
+    <div className="rounded-xl p-4 card-inset" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-[11px] uppercase tracking-widest text-text-muted mb-4 font-medium">Hyperparameters</p>
+      <div className="space-y-3">
         {PARAMS.map(({ key, label, min, max, step }) => (
-          <div key={key} className="flex items-center justify-between gap-2">
-            <label className="text-[10px] text-text-secondary whitespace-nowrap">{label}</label>
+          <div key={key}>
+            <label className="text-[11px] text-text-muted font-medium block mb-1">{label}</label>
             <input
               type="number"
               value={hyperparams[key]}
               onChange={(e) => setHyperparam(key, Number(e.target.value))}
               disabled={isTraining}
               min={min} max={max} step={step}
-              className="w-24 px-2 py-1 bg-bg-primary border border-border rounded text-[11px] font-mono text-text-primary focus:border-border-light focus:outline-none disabled:opacity-50"
+              className="w-full px-2.5 py-1.5 rounded-md text-xs font-mono text-text-primary focus:outline-none disabled:opacity-30 transition-opacity tabular-nums"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
             />
           </div>
         ))}
       </div>
+      {isTraining && (
+        <p className="text-[11px] text-text-muted mt-4 text-center">Stop training to edit</p>
+      )}
     </div>
   )
 }

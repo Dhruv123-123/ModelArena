@@ -36,7 +36,7 @@ export default function TrainingHints() {
       <div className="space-y-2">
         {hints.map((hint, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-            className={`px-3 py-2 rounded-lg border text-[11px] ${colors[hint.type]}`}>
+            className={`px-4 py-2.5 rounded-xl border text-xs ${colors[hint.type]}`}>
             {hint.text}
           </motion.div>
         ))}

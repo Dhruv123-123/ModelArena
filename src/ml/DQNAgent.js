@@ -47,8 +47,10 @@ export default class DQNAgent {
   }
 
   updateTargetModel() {
-    const weights = this.onlineModel.getWeights()
-    this.targetModel.setWeights(weights.map(w => w.clone()))
+    // getWeights() returns references to the model's actual internal tensors —
+    // do NOT dispose them or it destroys the online model's weights.
+    // setWeights() copies values into the target model's existing variables.
+    this.targetModel.setWeights(this.onlineModel.getWeights())
   }
 
   selectAction(state, forceGreedy = false) {
@@ -77,7 +79,8 @@ export default class DQNAgent {
 
     const batch = this.replayBuffer.sample(this.hp.batchSize)
 
-    const loss = tf.tidy(() => {
+    // Compute target Q-values inside tidy to avoid leaks
+    const targetData = tf.tidy(() => {
       const states = tf.tensor2d(batch.map(e => e.state))
       const nextStates = tf.tensor2d(batch.map(e => e.nextState))
 
@@ -96,19 +99,32 @@ export default class DQNAgent {
         }
       }
 
-      return tf.tensor2d(currentQ)
+      return currentQ
     })
 
+    // Create tensors for trainOnBatch, then dispose immediately after
     const statesTensor = tf.tensor2d(batch.map(e => e.state))
-    const result = await this.onlineModel.trainOnBatch(statesTensor, loss)
+    const targetTensor = tf.tensor2d(targetData)
+    const result = await this.onlineModel.trainOnBatch(statesTensor, targetTensor)
     statesTensor.dispose()
-    loss.dispose()
+    targetTensor.dispose()
+
+    // Dispose result tensor if applicable
+    let lossValue
+    if (typeof result === 'number') {
+      lossValue = result
+    } else if (result?.dataSync) {
+      lossValue = result.dataSync()[0]
+      result.dispose()
+    } else {
+      lossValue = 0
+    }
 
     this.trainSteps++
     if (this.trainSteps % this.hp.targetUpdateFreq === 0) this.updateTargetModel()
     this.epsilon = Math.max(this.hp.epsilonMin, this.epsilon * this.hp.epsilonDecay)
 
-    return typeof result === 'number' ? result : (result?.dataSync ? result.dataSync()[0] : 0)
+    return lossValue
   }
 
   dispose() {

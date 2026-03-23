@@ -57,23 +57,23 @@ export default function GameTutorial() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-bg-card border border-border rounded-lg p-4 mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] uppercase tracking-widest text-text-muted">Tutorial — Step {stepIdx + 1}/{tutorial.steps.length}</p>
+      className="bg-bg-card border border-border rounded-xl p-5 mb-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs uppercase tracking-widest text-text-muted font-medium">Tutorial — Step {stepIdx + 1}/{tutorial.steps.length}</p>
         <button onClick={() => setDismissed(d => ({ ...d, [activeGameId]: true }))}
-          className="text-[10px] text-text-muted hover:text-text-primary">Dismiss</button>
+          className="text-xs text-text-muted hover:text-text-primary transition-colors px-2 py-1 rounded-lg hover:bg-bg-hover">Dismiss</button>
       </div>
       <AnimatePresence mode="wait">
         <motion.div key={stepIdx} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-          <h3 className="text-sm font-semibold text-text-primary mb-1">{step.title}</h3>
-          <p className="text-xs text-text-secondary leading-relaxed">{step.text}</p>
+          <h3 className="text-sm font-semibold text-text-primary mb-1.5">{step.title}</h3>
+          <p className="text-sm text-text-secondary leading-relaxed">{step.text}</p>
         </motion.div>
       </AnimatePresence>
-      <div className="flex gap-2 mt-3">
+      <div className="flex gap-2 mt-4">
         <button disabled={stepIdx === 0} onClick={() => setStepIdx(s => s - 1)}
-          className="px-3 py-1 text-[10px] rounded border border-border text-text-muted disabled:opacity-30 hover:text-text-primary">← Prev</button>
+          className="px-4 py-1.5 text-xs rounded-lg border border-border text-text-muted disabled:opacity-30 hover:text-text-primary hover:border-border-light transition-colors">← Prev</button>
         <button disabled={stepIdx === tutorial.steps.length - 1} onClick={() => setStepIdx(s => s + 1)}
-          className="px-3 py-1 text-[10px] rounded border border-border text-text-muted disabled:opacity-30 hover:text-text-primary">Next →</button>
+          className="px-4 py-1.5 text-xs rounded-lg border border-border text-text-muted disabled:opacity-30 hover:text-text-primary hover:border-border-light transition-colors">Next →</button>
       </div>
     </motion.div>
   )

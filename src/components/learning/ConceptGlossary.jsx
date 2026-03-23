@@ -31,24 +31,24 @@ export default function ConceptGlossary() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-3 border-b border-border">
+      <div className="p-4 border-b border-border">
         <input value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search concepts..."
-          className="w-full px-3 py-1.5 bg-bg-primary border border-border rounded-lg text-xs text-text-primary placeholder:text-text-muted focus:border-border-light focus:outline-none" />
+          className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:border-border-light focus:outline-none" />
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      <div className="flex-1 overflow-y-auto p-4 space-y-1">
         {filtered.map(concept => (
           <div key={concept.term}>
             <button onClick={() => setExpanded(expanded === concept.term ? null : concept.term)}
-              className="w-full text-left px-3 py-2 rounded-lg hover:bg-bg-hover transition-colors flex items-center justify-between">
-              <span className="text-xs font-medium text-text-primary">{concept.term}</span>
-              <span className="text-[10px] text-text-muted">{expanded === concept.term ? '−' : '+'}</span>
+              className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-bg-hover transition-colors flex items-center justify-between">
+              <span className="text-sm font-medium text-text-primary">{concept.term}</span>
+              <span className="text-xs text-text-muted">{expanded === concept.term ? '−' : '+'}</span>
             </button>
             <AnimatePresence>
               {expanded === concept.term && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                  className="px-3 pb-2">
-                  <p className="text-[11px] text-text-secondary leading-relaxed">{concept.def}</p>
+                  className="px-4 pb-3">
+                  <p className="text-xs text-text-secondary leading-relaxed">{concept.def}</p>
                 </motion.div>
               )}
             </AnimatePresence>

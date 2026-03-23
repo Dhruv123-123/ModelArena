@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import * as tf from '@tensorflow/tfjs'
 import useGameStore, { GAMES } from '../../stores/useGameStore'
 import useModelStore from '../../stores/useModelStore'
 import useTrainingStore from '../../stores/useTrainingStore'
@@ -13,6 +14,9 @@ import CartPoleRenderer from '../../games/cartpole/CartPoleRenderer'
 import TwentyFortyEightEngine from '../../games/twentyfortyeight/TwentyFortyEightEngine'
 import TwentyFortyEightRenderer from '../../games/twentyfortyeight/TwentyFortyEightRenderer'
 import TrainingLoop from '../../ml/TrainingLoop'
+import SupervisedTrainer from '../../ml/SupervisedTrainer'
+import ChessEngine from '../../games/chess/ChessEngine'
+import ChessRenderer from '../../games/chess/ChessRenderer'
 import TrainingCharts from './TrainingCharts'
 import HyperparamConfig from './HyperparamConfig'
 import TrainingHints from './TrainingHints'
@@ -23,6 +27,7 @@ function createEngine(gameId) {
     case 'flappy': return new FlappyEngine()
     case 'cartpole': return new CartPoleEngine()
     case 'twentyfortyeight': return new TwentyFortyEightEngine()
+    case 'chess': return new ChessEngine()
     default: return new SnakeEngine()
   }
 }
@@ -30,10 +35,11 @@ function createEngine(gameId) {
 function GameRenderer({ gameId, gameState }) {
   if (!gameState) return null
   switch (gameId) {
-    case 'snake': return <SnakeRenderer gameState={gameState} width={300} height={300} />
-    case 'flappy': return <FlappyRenderer gameState={gameState} width={300} height={400} />
-    case 'cartpole': return <CartPoleRenderer gameState={gameState} width={400} height={250} />
-    case 'twentyfortyeight': return <TwentyFortyEightRenderer gameState={gameState} width={300} height={300} />
+    case 'snake': return <SnakeRenderer gameState={gameState} width={320} height={320} />
+    case 'flappy': return <FlappyRenderer gameState={gameState} width={300} height={420} />
+    case 'cartpole': return <CartPoleRenderer gameState={gameState} width={420} height={260} />
+    case 'twentyfortyeight': return <TwentyFortyEightRenderer gameState={gameState} width={320} height={320} />
+    case 'chess': return <ChessRenderer gameState={gameState} width={320} height={320} />
     default: return null
   }
 }
@@ -53,52 +59,116 @@ export default function TrainingPanel() {
 
   const handleStart = useCallback(() => {
     if (layers.length === 0) {
-      // Auto-load starter preset for convenience
-      useModelStore.getState().loadPreset('starter')
+      useModelStore.getState().loadPreset(activeGameId === 'chess' ? 'deep' : 'starter')
     }
     const currentLayers = useModelStore.getState().layers
     if (currentLayers.length === 0) return alert('Add layers to your model first!')
-    if (game.trainingMode === 'supervised') return alert('Chess uses supervised training (coming soon)')
 
-    const engine = createEngine(activeGameId)
-    training.startTraining()
+    // Use getState() to read fresh values from stores inside callbacks
+    const store = useTrainingStore.getState()
+    store.startTraining()
 
-    const loop = new TrainingLoop(engine, currentLayers, activeGameId, game.outputSize, training.hyperparams, {
-      onStep: (data) => {
-        stepCountRef.current++
-        if (stepCountRef.current % 10 === 0) {
-          setGameState(data.gameState)
-          setQValues(data.qValues)
-        }
-        if (data.loss !== null) training.addLoss(data.loss)
-        training.setEpsilon(data.epsilon)
-        training.setStep(data.step)
+    if (game.trainingMode === 'supervised') {
+      const chessEngine = new ChessEngine()
+      setGameState(chessEngine.getState())
 
-        const now = Date.now()
-        if (now - lastTimeRef.current > 1000) {
-          training.setStepsPerSecond(stepCountRef.current / ((now - lastTimeRef.current) / 1000))
-          stepCountRef.current = 0
-          lastTimeRef.current = now
-        }
-      },
-      onEpisodeEnd: (data) => {
-        training.addEpisodeReward(data.score)
-      },
-      onTrainingEnd: () => {
-        training.stopTraining()
-        addEntry(activeGameId, {
-          modelName,
-          bestScore: training.bestScore,
-          architecture: layers.map(l => l.type).join(' → '),
-          episodes: training.episode,
-          layerCount: layers.length,
+      try {
+        const trainer = new SupervisedTrainer(currentLayers, {
+          onEpoch: (data) => {
+            const s = useTrainingStore.getState()
+            s.addLoss(data.loss)
+            s.addEpisodeReward(1 - data.valLoss)
+            s.setStep(data.epoch)
+            s.setEpsilon(data.valLoss)
+            stepCountRef.current++
+
+            if (data.epoch % 5 === 0) {
+              const demoEngine = new ChessEngine()
+              const model = trainer.getModel()
+              for (let i = 0; i < 10; i++) {
+                if (demoEngine.isDone()) break
+                demoEngine.step(0, (board) => {
+                  try {
+                    const vec = demoEngine.getStateVector()
+                    const pred = model.predict(tf.tensor2d([vec]))
+                    const val = pred.dataSync()[0]
+                    pred.dispose()
+                    return val
+                  } catch { return 0 }
+                })
+              }
+              setGameState(demoEngine.getState())
+            }
+          },
+          onTrainingEnd: () => {
+            const s = useTrainingStore.getState()
+            s.stopTraining()
+            addEntry(activeGameId, {
+              modelName: useModelStore.getState().modelName,
+              bestScore: s.bestScore,
+              architecture: currentLayers.map(l => l.type).join(' → '),
+              episodes: s.episode,
+              layerCount: currentLayers.length,
+            })
+          },
         })
-      },
-    })
+        trainingRef.current = trainer
+        trainer.train(50, 32)
+      } catch (err) {
+        console.error('Supervised training failed:', err)
+        useTrainingStore.getState().stopTraining()
+        alert('Training failed: ' + err.message)
+      }
+      return
+    }
 
-    trainingRef.current = loop
-    loop.start()
-  }, [layers, activeGameId, game, training, modelName, addEntry])
+    try {
+      const engine = createEngine(activeGameId)
+      const hp = useTrainingStore.getState().hyperparams
+
+      const loop = new TrainingLoop(engine, currentLayers, activeGameId, game.outputSize, hp, {
+        onStep: (data) => {
+          stepCountRef.current++
+          if (stepCountRef.current % 10 === 0) {
+            setGameState(data.gameState)
+            setQValues(data.qValues)
+          }
+          const s = useTrainingStore.getState()
+          if (data.loss !== null) s.addLoss(data.loss)
+          s.setEpsilon(data.epsilon)
+          s.setStep(data.step)
+
+          const now = Date.now()
+          if (now - lastTimeRef.current > 1000) {
+            s.setStepsPerSecond(stepCountRef.current / ((now - lastTimeRef.current) / 1000))
+            stepCountRef.current = 0
+            lastTimeRef.current = now
+          }
+        },
+        onEpisodeEnd: (data) => {
+          useTrainingStore.getState().addEpisodeReward(data.score)
+        },
+        onTrainingEnd: () => {
+          const s = useTrainingStore.getState()
+          s.stopTraining()
+          addEntry(activeGameId, {
+            modelName: useModelStore.getState().modelName,
+            bestScore: s.bestScore,
+            architecture: currentLayers.map(l => l.type).join(' → '),
+            episodes: s.episode,
+            layerCount: currentLayers.length,
+          })
+        },
+      })
+
+      trainingRef.current = loop
+      loop.start()
+    } catch (err) {
+      console.error('Training failed:', err)
+      useTrainingStore.getState().stopTraining()
+      alert('Training failed: ' + err.message)
+    }
+  }, [layers, activeGameId, game, addEntry])
 
   const handlePause = () => {
     if (training.isPaused) { trainingRef.current?.resume(); training.resumeTraining() }
@@ -112,7 +182,7 @@ export default function TrainingPanel() {
     if (training.bestScore > -Infinity) {
       addEntry(activeGameId, {
         modelName, bestScore: training.bestScore,
-        architecture: layers.map(l => l.type).join(' → '),
+        architecture: layers.map(l => l.type).join(' \u2192 '),
         episodes: training.episode, layerCount: layers.length,
       })
     }
@@ -125,11 +195,11 @@ export default function TrainingPanel() {
   return (
     <div className="h-full flex">
       {/* Left: Game view + controls */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-lg font-semibold">Training: {game.name}</h2>
+      <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <h2 className="text-xl font-semibold">Training: {game.name}</h2>
           {training.isTraining && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-success/10 text-success border border-success/20">
+            <span className="px-3 py-1 rounded-full text-xs font-mono bg-success/10 text-success border border-success/20">
               Episode {training.episode} &middot; Best: {training.bestScore.toFixed(1)}
             </span>
           )}
@@ -137,19 +207,20 @@ export default function TrainingPanel() {
 
         {/* No model warning */}
         {layers.length === 0 && !training.isTraining && (
-          <div className="mb-4 p-4 rounded-lg border-2 border-dashed border-border bg-bg-card">
-            <p className="text-sm text-text-secondary mb-2">No model architecture configured yet.</p>
-            <p className="text-xs text-text-muted mb-3">Go to Model Builder to design your network, or use a quick-start below:</p>
+          <div className="mb-6 p-5 rounded-xl card-inset" style={{ border: '2px dashed rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+            <p className="text-sm text-text-secondary mb-1.5">No model architecture configured yet.</p>
+            <p className="text-xs text-text-muted mb-4">Go to Model Builder to design your network, or use a quick-start:</p>
             <div className="flex gap-2">
               <button
-                onClick={() => { useModelStore.getState().loadPreset('starter'); }}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-accent-snake/10 text-accent-snake border border-accent-snake/20"
+                onClick={() => { useModelStore.getState().loadPreset('starter') }}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-[#050508] hover:bg-white/90 transition-colors"
               >
                 Load Starter (2-layer)
               </button>
               <button
-                onClick={() => { useModelStore.getState().loadPreset('deep'); }}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-bg-hover text-text-primary border border-border"
+                onClick={() => { useModelStore.getState().loadPreset('deep') }}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 Load Deep (5-layer)
               </button>
@@ -158,23 +229,25 @@ export default function TrainingPanel() {
         )}
 
         {/* Controls */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-6">
           {!training.isTraining ? (
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
               onClick={handleStart}
-              className={`px-4 py-2 rounded-lg font-medium text-sm bg-${game.accentColor} text-bg-primary hover:opacity-90 transition-opacity`}>
+              className="px-6 py-2.5 rounded-lg font-medium text-sm bg-white text-[#050508] hover:bg-white/90 transition-colors">
               Start Training
             </motion.button>
           ) : (
             <>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                 onClick={handlePause}
-                className="px-4 py-2 rounded-lg font-medium text-sm bg-warning/10 text-warning border border-warning/20">
+                className="px-5 py-2 rounded-lg font-medium text-sm transition-colors"
+                style={{ background: 'rgba(234,179,8,0.08)', color: '#EAB308', border: '1px solid rgba(234,179,8,0.15)' }}>
                 {training.isPaused ? 'Resume' : 'Pause'}
               </motion.button>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                 onClick={handleStop}
-                className="px-4 py-2 rounded-lg font-medium text-sm bg-error/10 text-error border border-error/20">
+                className="px-5 py-2 rounded-lg font-medium text-sm transition-colors"
+                style={{ background: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.15)' }}>
                 Stop
               </motion.button>
             </>
@@ -182,11 +255,11 @@ export default function TrainingPanel() {
         </div>
 
         {/* Live game view */}
-        <div className="mb-4">
+        <div className="mb-6">
           {gameState ? (
             <GameRenderer gameId={activeGameId} gameState={gameState} qValues={qValues} />
           ) : (
-            <div className="w-[300px] h-[300px] rounded-lg border border-border bg-bg-card flex items-center justify-center">
+            <div className="w-[320px] h-[320px] rounded-xl border border-border bg-bg-card flex items-center justify-center">
               <p className="text-text-muted text-sm">Start training to see live gameplay</p>
             </div>
           )}
@@ -194,29 +267,29 @@ export default function TrainingPanel() {
 
         {/* Stats */}
         {training.isTraining && (
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
             {[
               { label: 'Episode', value: training.episode },
               { label: 'Best Score', value: training.bestScore.toFixed(1) },
               { label: 'Epsilon', value: training.epsilon.toFixed(3) },
               { label: 'Steps/s', value: training.stepsPerSecond.toFixed(0) },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-bg-card border border-border rounded-lg p-2 text-center">
-                <p className="text-[10px] text-text-muted">{label}</p>
-                <p className="text-sm font-mono font-medium text-text-primary">{value}</p>
+              <div key={label} className="rounded-lg p-3 text-center card-inset" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-[11px] uppercase tracking-wider text-text-muted mb-1 font-medium">{label}</p>
+                <p className="text-base font-mono font-semibold text-text-primary tabular-nums">{value}</p>
               </div>
             ))}
           </div>
         )}
 
         <TrainingHints />
-        <div className="mt-4">
+        <div className="mt-6">
           <TrainingCharts />
         </div>
       </div>
 
       {/* Right: Hyperparams */}
-      <div className="w-72 border-l border-border bg-bg-secondary p-3 overflow-y-auto shrink-0">
+      <div className="w-72 border-l border-border bg-bg-secondary p-4 overflow-y-auto shrink-0">
         <HyperparamConfig />
       </div>
     </div>

@@ -16,9 +16,9 @@ export default function ShapePropagator() {
   const outputMatch = outputShape.length === 1 && outputShape[0] === game.outputSize
 
   return (
-    <div className="mt-4 p-3 rounded-lg bg-bg-card border border-border">
-      <p className="text-[10px] uppercase tracking-widest text-text-muted mb-2">Shape Flow</p>
-      <div className="space-y-1 font-mono text-[11px]">
+    <div className="mt-4 p-4 rounded-xl bg-bg-card border border-border">
+      <p className="text-xs uppercase tracking-widest text-text-muted mb-3 font-medium">Shape Flow</p>
+      <div className="space-y-1.5 font-mono text-xs">
         <div className="flex justify-between text-text-secondary">
           <span>Input</span>
           <span>[{getInputShape(activeGameId).join(', ')}]</span>
@@ -33,7 +33,7 @@ export default function ShapePropagator() {
             </div>
           )
         })}
-        <div className="border-t border-border pt-1 mt-1">
+        <div className="border-t border-border pt-1.5 mt-1.5">
           <div className={`flex justify-between font-medium ${outputMatch ? 'text-success' : 'text-warning'}`}>
             <span>Output</span>
             <span>[{game.outputSize}] {outputMatch ? '✓' : `(need [${game.outputSize}])`}</span>
@@ -41,9 +41,9 @@ export default function ShapePropagator() {
         </div>
       </div>
       {errors.length > 0 && (
-        <div className="mt-2 space-y-1">
+        <div className="mt-3 space-y-1.5">
           {errors.map((e, i) => (
-            <p key={i} className="text-[10px] text-error">{e.message}</p>
+            <p key={i} className="text-xs text-error">{e.message}</p>
           ))}
         </div>
       )}
