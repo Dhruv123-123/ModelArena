@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import MainLayout from './components/layout/MainLayout'
 import WelcomeScreen from './components/welcome/WelcomeScreen'
@@ -9,6 +9,19 @@ export default function App() {
     return !localStorage.getItem('modelarena-visited')
   })
   const [showTour, setShowTour] = useState(false)
+
+  // Allow scrolling on the landing page, lock it inside the app
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (!root) return
+    if (showWelcome) {
+      root.style.overflowY = 'auto'
+      root.style.height = 'auto'
+    } else {
+      root.style.overflowY = 'hidden'
+      root.style.height = '100%'
+    }
+  }, [showWelcome])
 
   const handleDismissWelcome = () => {
     localStorage.setItem('modelarena-visited', 'true')

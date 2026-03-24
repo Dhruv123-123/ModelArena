@@ -45,6 +45,11 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* Landing page scroll mode */
+#root.landing-scroll {
+  overflow-y: auto;
+}
+
 body {
   font-family: var(--font-family-sans);
   background-color: var(--color-bg-primary);
