@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import useGameStore, { GAMES } from '../../stores/useGameStore'
+import LiveDemoSection from './LiveDemoSection'
 
 const HERO_GAMES = [
   { id: 'snake', color: '#22C55E', label: 'Snake', emoji: '🐍', desc: 'Classic pathfinding AI', difficulty: 'Beginner' },
@@ -441,6 +442,9 @@ export default function WelcomeScreen({ onDismiss }) {
           ))}
         </div>
       </section>
+
+      {/* ── LIVE DEMO ── */}
+      <LiveDemoSection onEnterApp={() => handleStart('snake', 'builder')} />
 
       {/* ── GAMES ── */}
       <section id="games" className="py-24 px-6">
