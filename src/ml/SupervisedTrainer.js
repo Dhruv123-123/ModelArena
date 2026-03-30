@@ -1,19 +1,7 @@
 import * as tf from '@tensorflow/tfjs'
 import { buildModel } from './ModelBuilder.js'
 import { LABELED_POSITIONS } from '../games/chess/chessPositions.js'
-
-function boardToVector(board) {
-  const vec = []
-  for (let r = 0; r < 8; r++)
-    for (let c = 0; c < 8; c++) {
-      const oneHot = Array(12).fill(0)
-      if (board[r][c] > 0) oneHot[board[r][c] - 1] = 1
-      vec.push(...oneHot)
-    }
-  // Pad to 780
-  while (vec.length < 780) vec.push(0)
-  return vec.slice(0, 780)
-}
+import { boardToVector } from '../utils/chessBoardVector.js'
 
 export default class SupervisedTrainer {
   constructor(layers, callbacks = {}) {

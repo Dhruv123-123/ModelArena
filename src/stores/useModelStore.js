@@ -48,11 +48,15 @@ const PRESETS = {
   },
 }
 
-const useModelStore = create((set, get) => ({
+const useModelStore = create((set) => ({
   layers: [],
   modelName: 'My Model',
   selectedLayerId: null,
   shapeErrors: [],
+  /** When set, playback / import prefers weights loaded from IndexedDB at this key */
+  savedWeightsKey: null,
+  setSavedWeightsKey: (key) => set({ savedWeightsKey: key || null }),
+  clearSavedWeightsKey: () => set({ savedWeightsKey: null }),
 
   addLayer: (type) => {
     const defaults = LAYER_DEFAULTS[type]
@@ -80,7 +84,7 @@ const useModelStore = create((set, get) => ({
   },
   setModelName: (name) => set({ modelName: name }),
   setShapeErrors: (errors) => set({ shapeErrors: errors }),
-  clearAll: () => set({ layers: [], selectedLayerId: null, shapeErrors: [] }),
+  clearAll: () => set({ layers: [], selectedLayerId: null, shapeErrors: [], savedWeightsKey: null }),
   getPresets: () => PRESETS,
 }))
 

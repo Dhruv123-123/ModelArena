@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-const useTrainingStore = create((set, get) => ({
+const useTrainingStore = create((set) => ({
   isTraining: false,
   isPaused: false,
   episode: 0,

@@ -288,6 +288,84 @@ export default class ChessEngine extends GameEngine {
     }
   }
 
+  /** Apply a move already validated as legal for the side to move. */
+  _applyChosenMove(move) {
+    const captured = this.board[move.to[0]][move.to[1]]
+    const movedPiece = this.board[move.from[0]][move.from[1]]
+    const wasPawn = pieceType(movedPiece) === 1
+
+    const epCapture = move.special === 'enPassant'
+
+    this.board = this._makeMove(this.board, move)
+
+    if (move.special === 'doublePush') {
+      this.enPassant = [(move.from[0] + move.to[0]) / 2, move.to[1]]
+    } else {
+      this.enPassant = null
+    }
+
+    if (pieceType(movedPiece) === 6) {
+      if (this.whiteToMove) { this.castling.wk = false; this.castling.wq = false }
+      else { this.castling.bk = false; this.castling.bq = false }
+    }
+    if (pieceType(movedPiece) === 4) {
+      if (move.from[0] === 7 && move.from[1] === 0) this.castling.wq = false
+      if (move.from[0] === 7 && move.from[1] === 7) this.castling.wk = false
+      if (move.from[0] === 0 && move.from[1] === 0) this.castling.bq = false
+      if (move.from[0] === 0 && move.from[1] === 7) this.castling.bk = false
+    }
+    if (move.to[0] === 0 && move.to[1] === 0) this.castling.bq = false
+    if (move.to[0] === 0 && move.to[1] === 7) this.castling.bk = false
+    if (move.to[0] === 7 && move.to[1] === 0) this.castling.wq = false
+    if (move.to[0] === 7 && move.to[1] === 7) this.castling.wk = false
+
+    this.whiteToMove = !this.whiteToMove
+    this.steps++
+    this.moveHistory.push(move)
+
+    if (captured || wasPawn || epCapture) {
+      this.halfMoveClock = 0
+    } else {
+      this.halfMoveClock++
+    }
+
+    if (captured) this.score += Math.abs(PIECE_VALUES[captured] || 0)
+    if (epCapture) this.score += 1
+
+    this.inCheck = isInCheck(this.board, this.whiteToMove)
+    const legal = this.getLegalMoves()
+
+    if (legal.length === 0) {
+      this.done = true
+      if (this.inCheck) {
+        this.result = this.whiteToMove ? 'black' : 'white'
+      } else {
+        this.result = 'draw'
+      }
+    } else if (this.halfMoveClock >= 100) {
+      this.done = true
+      this.result = 'draw'
+    } else if (this.steps > 200) {
+      this.done = true
+      this.result = 'draw'
+    }
+
+    const reward = captured ? 1 : (epCapture ? 0.5 : 0)
+    return { state: this.getStateVector(), reward, done: this.done, score: this.score }
+  }
+
+  /** Human / UI: apply one legal move matching from→to (promotion defaults to queen in _makeMove). */
+  applyMoveBySquares(fromRow, fromCol, toRow, toCol) {
+    if (this.done) return false
+    const legal = this.getLegalMoves()
+    const found = legal.find(
+      (m) => m.from[0] === fromRow && m.from[1] === fromCol && m.to[0] === toRow && m.to[1] === toCol,
+    )
+    if (!found) return false
+    this._applyChosenMove(found)
+    return true
+  }
+
   step(action, evalFn = null) {
     if (this.done) return { state: this.getStateVector(), reward: 0, done: true, score: this.score }
 
@@ -304,77 +382,7 @@ export default class ChessEngine extends GameEngine {
       return { state: this.getStateVector(), reward: 0, done: true, score: this.score }
     }
 
-    const captured = this.board[move.to[0]][move.to[1]]
-    const movedPiece = this.board[move.from[0]][move.from[1]]
-    const wasPawn = pieceType(movedPiece) === 1
-
-    // En passant capture
-    let epCapture = false
-    if (move.special === 'enPassant') {
-      epCapture = true
-    }
-
-    this.board = this._makeMove(this.board, move)
-
-    // Update en passant
-    if (move.special === 'doublePush') {
-      this.enPassant = [(move.from[0] + move.to[0]) / 2, move.to[1]]
-    } else {
-      this.enPassant = null
-    }
-
-    // Update castling rights
-    if (pieceType(movedPiece) === 6) { // King moved
-      if (this.whiteToMove) { this.castling.wk = false; this.castling.wq = false }
-      else { this.castling.bk = false; this.castling.bq = false }
-    }
-    if (pieceType(movedPiece) === 4) { // Rook moved
-      if (move.from[0] === 7 && move.from[1] === 0) this.castling.wq = false
-      if (move.from[0] === 7 && move.from[1] === 7) this.castling.wk = false
-      if (move.from[0] === 0 && move.from[1] === 0) this.castling.bq = false
-      if (move.from[0] === 0 && move.from[1] === 7) this.castling.bk = false
-    }
-    // If rook captured on original square
-    if (move.to[0] === 0 && move.to[1] === 0) this.castling.bq = false
-    if (move.to[0] === 0 && move.to[1] === 7) this.castling.bk = false
-    if (move.to[0] === 7 && move.to[1] === 0) this.castling.wq = false
-    if (move.to[0] === 7 && move.to[1] === 7) this.castling.wk = false
-
-    this.whiteToMove = !this.whiteToMove
-    this.steps++
-    this.moveHistory.push(move)
-
-    // 50-move rule
-    if (captured || wasPawn || epCapture) {
-      this.halfMoveClock = 0
-    } else {
-      this.halfMoveClock++
-    }
-
-    if (captured) this.score += Math.abs(PIECE_VALUES[captured] || 0)
-    if (epCapture) this.score += 1 // pawn value
-
-    // Check game end conditions
-    this.inCheck = isInCheck(this.board, this.whiteToMove)
-    const legal = this.getLegalMoves()
-
-    if (legal.length === 0) {
-      this.done = true
-      if (this.inCheck) {
-        this.result = this.whiteToMove ? 'black' : 'white'
-      } else {
-        this.result = 'draw' // stalemate
-      }
-    } else if (this.halfMoveClock >= 100) {
-      this.done = true
-      this.result = 'draw' // 50-move rule
-    } else if (this.steps > 200) {
-      this.done = true
-      this.result = 'draw'
-    }
-
-    const reward = captured ? 1 : (epCapture ? 0.5 : 0)
-    return { state: this.getStateVector(), reward, done: this.done, score: this.score }
+    return this._applyChosenMove(move)
   }
 
   getState() {

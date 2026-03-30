@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion as M } from 'framer-motion'
 import { PIECES } from './chessConfig'
 
 const PIECE_CHARS = {
@@ -7,7 +7,15 @@ const PIECE_CHARS = {
   [PIECES.BK]: '\u265A', [PIECES.BQ]: '\u265B', [PIECES.BR]: '\u265C', [PIECES.BB]: '\u265D', [PIECES.BN]: '\u265E', [PIECES.BP]: '\u265F',
 }
 
-export default function ChessRenderer({ gameState, width = 400, height = 400 }) {
+export default function ChessRenderer({
+  gameState,
+  width = 400,
+  height = 400,
+  interactive = false,
+  selectedCell = null,
+  legalTargets = null,
+  onSquareClick,
+}) {
   const canvasRef = useRef(null)
 
   const draw = useCallback(() => {
@@ -17,20 +25,52 @@ export default function ChessRenderer({ gameState, width = 400, height = 400 }) 
     const { board, whiteToMove, score, done, inCheck, result, lastMove } = gameState
     const cellSize = width / 8
 
+    const isSelected = (r, c) => selectedCell && selectedCell[0] === r && selectedCell[1] === c
+    const isLegal = (r, c) => legalTargets?.some(([lr, lc]) => lr === r && lc === c)
+
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const isLight = (r + c) % 2 === 0
-        ctx.fillStyle = isLight ? '#2A2520' : '#3D352A'
+        const x0 = c * cellSize
+        const y0 = r * cellSize
+        const woodGrad = ctx.createLinearGradient(x0, y0, x0 + cellSize, y0 + cellSize)
+        if (isLight) {
+          woodGrad.addColorStop(0, '#E8D4B8')
+          woodGrad.addColorStop(0.5, '#C4A574')
+          woodGrad.addColorStop(1, '#9A7B4F')
+        } else {
+          woodGrad.addColorStop(0, '#6B4423')
+          woodGrad.addColorStop(0.45, '#4A3020')
+          woodGrad.addColorStop(1, '#2E1F14')
+        }
+        ctx.fillStyle = woodGrad
+        ctx.fillRect(x0, y0, cellSize, cellSize)
 
-        // Highlight last move
+        let overlay = null
         if (lastMove) {
-          if ((lastMove.from[0] === r && lastMove.from[1] === c) ||
-              (lastMove.to[0] === r && lastMove.to[1] === c)) {
-            ctx.fillStyle = isLight ? '#4A4020' : '#5D5530'
+          const from = lastMove.from[0] === r && lastMove.from[1] === c
+          const to = lastMove.to[0] === r && lastMove.to[1] === c
+          if (from || to) {
+            overlay = from
+              ? 'rgba(234, 179, 8, 0.28)'
+              : 'rgba(34, 197, 94, 0.22)'
           }
         }
+        if (isSelected(r, c)) {
+          overlay = isLight ? 'rgba(99, 102, 241, 0.4)' : 'rgba(99, 102, 241, 0.32)'
+        } else if (isLegal(r, c)) {
+          overlay = isLight ? 'rgba(34, 197, 94, 0.38)' : 'rgba(34, 197, 94, 0.3)'
+        }
+        if (overlay) {
+          ctx.fillStyle = overlay
+          ctx.fillRect(x0, y0, cellSize, cellSize)
+        }
 
-        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize)
+        if (isSelected(r, c)) {
+          ctx.strokeStyle = 'rgba(129, 140, 248, 0.95)'
+          ctx.lineWidth = 3
+          ctx.strokeRect(x0 + 1.5, y0 + 1.5, cellSize - 3, cellSize - 3)
+        }
 
         // Highlight king in check
         const piece = board[r][c]
@@ -96,14 +136,33 @@ export default function ChessRenderer({ gameState, width = 400, height = 400 }) 
         ctx.fillText('Stalemate / 50-move rule', width / 2, height / 2 + 14)
       }
     }
-  }, [gameState, width, height])
+  }, [gameState, width, height, selectedCell, legalTargets])
 
   useEffect(() => { draw() }, [draw])
 
+  const handleClick = (e) => {
+    if (!interactive || !onSquareClick || gameState?.done) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const cell = width / 8
+    const c = Math.floor(x / cell)
+    const r = Math.floor(y / cell)
+    if (r >= 0 && r < 8 && c >= 0 && c < 8) onSquareClick(r, c)
+  }
+
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+    <M.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
       className="rounded-lg overflow-hidden border border-border" style={{ width, height }}>
-      <canvas ref={canvasRef} width={width} height={height} className="block" />
-    </motion.div>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className={`block ${interactive ? 'cursor-pointer' : ''}`}
+        onClick={handleClick}
+      />
+    </M.div>
   )
 }

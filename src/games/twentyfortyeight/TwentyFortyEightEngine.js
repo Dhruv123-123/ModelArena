@@ -13,6 +13,7 @@ export default class TwentyFortyEightEngine extends GameEngine {
     this.score = 0
     this.done = false
     this.steps = 0
+    this.mergeFlash = []
     this._addRandomTile()
     this._addRandomTile()
     return this.getStateVector()
@@ -28,15 +29,32 @@ export default class TwentyFortyEightEngine extends GameEngine {
     this.grid[r][c] = Math.random() < 0.9 ? 2 : 4
   }
 
+  /** One 90° CW step: same as _rotateGrid single iteration (r,c) → (c, 3−r) */
+  _fwdRotateCell(r, c) {
+    return [c, 3 - r]
+  }
+
+  _fwdRotateTimes(r, c, times) {
+    let rr = r
+    let cc = c
+    for (let t = 0; t < times; t++) {
+      ;[rr, cc] = this._fwdRotateCell(rr, cc)
+    }
+    return [rr, cc]
+  }
+
   _compress(row) {
     const filtered = row.filter(v => v !== 0)
     const result = []
     let mergeScore = 0
+    const mergeAt = []
     let i = 0
     while (i < filtered.length) {
       if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
-        result.push(filtered[i] * 2)
-        mergeScore += filtered[i] * 2
+        const v = filtered[i] * 2
+        result.push(v)
+        mergeScore += v
+        mergeAt.push(result.length - 1)
         i += 2
       } else {
         result.push(filtered[i])
@@ -44,7 +62,7 @@ export default class TwentyFortyEightEngine extends GameEngine {
       }
     }
     while (result.length < this.size) result.push(0)
-    return { row: result, score: mergeScore }
+    return { row: result, score: mergeScore, mergeAt }
   }
 
   _rotateGrid(grid, times) {
@@ -62,18 +80,27 @@ export default class TwentyFortyEightEngine extends GameEngine {
   step(action) {
     if (this.done) return { state: this.getStateVector(), reward: 0, done: true, score: this.score }
 
+    this.mergeFlash = []
+
     // Rotate so we always compress left
     const rotations = [0, 2, 3, 1] // Up, Down, Left, Right
-    let g = this._rotateGrid(this.grid, rotations[action])
+    const rot = rotations[action]
+    let g = this._rotateGrid(this.grid, rot)
     let moveScore = 0
     let moved = false
+    const mergeFlash = []
+    const invSteps = (4 - rot) % 4
 
     const newG = []
     for (let r = 0; r < this.size; r++) {
-      const { row, score } = this._compress(g[r])
+      const { row, score, mergeAt } = this._compress(g[r])
       if (row.some((v, i) => v !== g[r][i])) moved = true
       newG.push(row)
       moveScore += score
+      for (const mc of mergeAt) {
+        const [fr, fc] = this._fwdRotateTimes(r, mc, invSteps)
+        mergeFlash.push([fr, fc])
+      }
     }
 
     if (!moved) {
@@ -87,7 +114,8 @@ export default class TwentyFortyEightEngine extends GameEngine {
     }
 
     // Rotate back
-    this.grid = this._rotateGrid(newG, (4 - rotations[action]) % 4)
+    this.grid = this._rotateGrid(newG, invSteps)
+    this.mergeFlash = mergeFlash
     this.score += moveScore
     this.steps++
     this._addRandomTile()
@@ -112,7 +140,9 @@ export default class TwentyFortyEightEngine extends GameEngine {
       grid: this.grid.map(r => [...r]),
       score: this.score,
       done: this.done,
+      steps: this.steps,
       maxTile: Math.max(...this.grid.flat()),
+      mergeFlash: (this.mergeFlash || []).map(([r, c]) => [r, c]),
     }
   }
 
@@ -140,6 +170,7 @@ export default class TwentyFortyEightEngine extends GameEngine {
     const c = new TwentyFortyEightEngine()
     c.grid = this.grid.map(r => [...r])
     c.score = this.score; c.done = this.done; c.steps = this.steps
+    c.mergeFlash = [...(this.mergeFlash || [])]
     return c
   }
 }

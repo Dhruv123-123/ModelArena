@@ -108,21 +108,41 @@ export const PRETRAINED_MODELS = {
   },
 }
 
-// Check if a pre-trained model exists in IndexedDB
+// Check if a pre-trained model exists in IndexedDB or has a remote URL
 export async function hasPretrainedModel(modelId) {
   try {
     const models = await tf.io.listModels()
-    return !!models[`indexeddb://pretrained-${modelId}`]
+    if (models[`indexeddb://pretrained-${modelId}`]) return true
+    
+    // Check if any config has this ID and a remote URL
+    const config = Object.values(PRETRAINED_MODELS).find(m => m.id === modelId)
+    return !!config?.remoteUrl
   } catch {
     return false
   }
 }
 
-// Load a pre-trained model from IndexedDB
+// Load a pre-trained model from IndexedDB or Remote URL
 export async function loadPretrainedModel(modelId) {
   try {
-    return await tf.loadLayersModel(`indexeddb://pretrained-${modelId}`)
-  } catch {
+    // Try local IndexedDB first
+    const models = await tf.io.listModels()
+    if (models[`indexeddb://pretrained-${modelId}`]) {
+      return await tf.loadLayersModel(`indexeddb://pretrained-${modelId}`)
+    }
+    
+    // Try remote URL if configured
+    const config = Object.values(PRETRAINED_MODELS).find(m => m.id === modelId)
+    if (config?.remoteUrl) {
+      const model = await tf.loadLayersModel(config.remoteUrl)
+      // Cache it locally for next time
+      await savePretrainedModel(model, modelId)
+      return model
+    }
+    
+    return null
+  } catch (err) {
+    console.error(`Failed to load pretrained model ${modelId}:`, err)
     return null
   }
 }
@@ -160,14 +180,12 @@ export async function quickTrainModel(gameId, onProgress) {
 
   for (let ep = 0; ep < totalEpisodes; ep++) {
     let state = engine.reset()
-    let totalReward = 0
 
     for (let step = 0; step < config.hyperparams.maxStepsPerEpisode; step++) {
       const action = agent.selectAction(state)
       const { state: nextState, reward, done } = engine.step(action)
       agent.storeExperience(state, action, reward, nextState, done)
       await agent.train()
-      totalReward += reward
       state = nextState
       if (done) break
 

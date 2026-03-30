@@ -1,47 +1,99 @@
-import { motion } from 'framer-motion'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion as M } from 'framer-motion'
 import useGameStore, { GAMES } from '../../stores/useGameStore'
 import useTrainingStore from '../../stores/useTrainingStore'
+import { getGameAccentHex } from '../../utils/gameTheme'
+
+const GAME_ICONS = {
+  snake: 'videogame_asset',
+  flappy: 'flutter_dash',
+  cartpole: 'analytics',
+  twentyfortyeight: 'grid_view',
+  chess: 'chess',
+}
+
+const VIEW_MAP = {
+  builder: 'Build',
+  train: 'Train',
+  play: 'Watch',
+  leaderboard: 'Compete',
+}
 
 export default function TopBar() {
-  const { activeGameId, view } = useGameStore()
+  const navigate = useNavigate()
+  const { activeGameId, view, setView } = useGameStore()
   const { isTraining, episode, bestScore, epsilon, stepsPerSecond } = useTrainingStore()
   const game = GAMES[activeGameId]
 
-  const viewLabel = { builder: 'Model Builder', train: 'Training', play: 'Playback', leaderboard: 'Leaderboard' }[view] || ''
+  useEffect(() => {
+    document.documentElement.style.setProperty('--game-accent', getGameAccentHex(activeGameId))
+  }, [activeGameId])
 
   return (
-    <div className="h-12 bg-bg-secondary/60 backdrop-blur-md border-b border-border flex items-center px-5 justify-between shrink-0">
-      <div className="flex items-center gap-3">
-        <span className="text-base">{game.icon}</span>
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-text-primary leading-none">{game.name}</h2>
-          <span className="text-text-muted">/</span>
-          <span className="text-sm text-text-secondary">{viewLabel}</span>
-        </div>
-        <span className="px-2.5 py-0.5 rounded-md text-[11px] font-mono text-text-muted" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          {game.inputSize} → {game.outputSize}
-        </span>
+    <header className="h-16 bg-bg-primary/80 backdrop-blur-xl border-b border-border-light flex items-center px-6 justify-between shrink-0 z-50">
+      {/* Left: Brand + Pipeline Nav */}
+      <div className="flex items-center gap-8">
+        <button onClick={() => navigate('/')} className="flex items-center gap-2 group">
+          <span className="w-6 h-6 bg-primary rounded-full opacity-80" />
+          <span className="text-xl font-black text-text-primary tracking-tighter uppercase">ModelArena</span>
+        </button>
+
+        {/* Pipeline Navigation */}
+        <nav className="hidden md:flex items-center gap-8">
+          {Object.entries(VIEW_MAP).map(([viewId, label]) => (
+            <button
+              key={viewId}
+              onClick={() => setView(viewId)}
+              className={`font-label tracking-widest text-[11px] uppercase font-bold transition-all duration-300 ${
+                view === viewId
+                  ? 'text-primary border-b-2 border-primary/40 pb-1'
+                  : 'text-text-primary/40 hover:text-primary'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      {isTraining && (
-        <motion.div
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-4 text-[13px] font-mono tabular-nums"
-        >
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            <span className="text-text-muted">Ep</span>
-            <span className="text-text-primary font-medium">{episode}</span>
+      {/* Right: Training Stats + Controls */}
+      <div className="flex items-center gap-4">
+        {/* Training Live Stats */}
+        {isTraining && (
+          <M.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden lg:flex items-center gap-3"
+          >
+            <div className="flex items-center gap-2 px-3 py-1 bg-primary/5 rounded border border-primary/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary status-pulse" />
+              <span className="font-label text-[10px] uppercase tracking-widest text-primary font-bold">Training</span>
+            </div>
+            <div className="flex items-center gap-4 font-mono text-[11px] tabular-nums">
+              <span className="text-text-muted">Ep <span className="text-text-primary font-bold">{episode}</span></span>
+              <span className="text-text-muted">Best <span className="text-text-primary font-bold">{bestScore.toFixed(1)}</span></span>
+              <span className="text-text-muted">&epsilon; {epsilon.toFixed(3)}</span>
+              <span className="text-text-muted">{stepsPerSecond.toFixed(0)} sps</span>
+            </div>
+          </M.div>
+        )}
+
+        {/* Active Game Badge */}
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-bg-hover rounded border border-border">
+          <span className="material-symbols-outlined text-primary text-sm">{GAME_ICONS[activeGameId] || 'videogame_asset'}</span>
+          <span className="font-label text-[10px] uppercase tracking-widest font-bold">Active: {game.name}</span>
+        </div>
+
+        {/* Icons */}
+        <div className="flex items-center gap-3">
+          <button className="material-symbols-outlined text-text-primary/40 hover:text-primary transition-colors text-xl">notifications</button>
+          <button className="material-symbols-outlined text-text-primary/40 hover:text-primary transition-colors text-xl">settings</button>
+          <div className="w-8 h-8 rounded-full border border-border-light bg-bg-elevated flex items-center justify-center overflow-hidden">
+            <span className="material-symbols-outlined text-text-muted text-base">person</span>
           </div>
-          <div>
-            <span className="text-text-muted">Best </span>
-            <span className="text-text-primary font-medium">{bestScore.toFixed(1)}</span>
-          </div>
-          <span className="text-text-muted">&epsilon; {epsilon.toFixed(3)}</span>
-          <span className="text-text-muted">{stepsPerSecond.toFixed(0)} sps</span>
-        </motion.div>
-      )}
-    </div>
+        </div>
+      </div>
+    </header>
   )
 }

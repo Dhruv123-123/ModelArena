@@ -44,3 +44,49 @@ export function getInputShape(gameId) {
   const shapes = { snake: [20], flappy: [6], cartpole: [4], twentyfortyeight: [20], chess: [780] }
   return shapes[gameId] || [20]
 }
+
+/** Rough parameter count including the final output Dense added in ModelBuilder. */
+export function estimateParameterCount(layers, inputShape, outputSize) {
+  let current = [...inputShape]
+  let total = 0
+
+  const flatSize = () => current.reduce((a, b) => a * b, 1)
+
+  for (const layer of layers) {
+    switch (layer.type) {
+      case 'dense': {
+        const inN = flatSize()
+        const u = layer.units || 0
+        total += inN * u + u
+        current = [u]
+        break
+      }
+      case 'conv2d': {
+        if (current.length !== 3) break
+        const [h, w, c] = current
+        const k = layer.kernelSize || 3
+        const f = layer.filters || 0
+        total += (k * k * c + 1) * f
+        current = layer.padding === 'valid'
+          ? [h - k + 1, w - k + 1, f]
+          : [h, w, f]
+        break
+      }
+      case 'flatten':
+        current = [flatSize()]
+        break
+      case 'batchnorm': {
+        const n = flatSize()
+        total += n * 4
+        break
+      }
+      default:
+        break
+    }
+  }
+
+  const lastIn = flatSize()
+  const out = outputSize ?? 1
+  total += lastIn * out + out
+  return Math.round(total)
+}

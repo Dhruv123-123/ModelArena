@@ -1,168 +1,137 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import { motion as M, AnimatePresence } from 'framer-motion'
 import useGameStore, { GAMES } from '../../stores/useGameStore'
+import useModelStore from '../../stores/useModelStore'
 import ConceptGlossary from '../learning/ConceptGlossary'
 
 const gameList = Object.values(GAMES)
 
+const GAME_ICONS = {
+  snake: 'videogame_asset',
+  flappy: 'flutter_dash',
+  cartpole: 'analytics',
+  twentyfortyeight: 'grid_view',
+  chess: 'chess',
+}
+
 const viewButtons = [
-  { id: 'builder', label: 'Model Builder', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>) },
-  { id: 'train', label: 'Train', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>) },
-  { id: 'play', label: 'Watch Play', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>) },
-  { id: 'leaderboard', label: 'Leaderboard', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7.5 4 8 5.5 8 7v10a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V7c0-1.5.5-3 3.5-3a2.5 2.5 0 0 1 0 5H18"/><path d="M8 14h8"/></svg>) },
+  { id: 'builder', label: 'Builder', icon: 'architecture' },
+  { id: 'train', label: 'Training', icon: 'model_training' },
+  { id: 'play', label: 'Watch', icon: 'play_circle' },
+  { id: 'leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
 ]
 
-export default function Sidebar({ onShowWelcome }) {
+export default function Sidebar() {
+  const navigate = useNavigate()
   const { activeGameId, setActiveGame, view, setView } = useGameStore()
-  const activeGame = GAMES[activeGameId]
+  const clearAll = useModelStore(s => s.clearAll)
   const [showGlossary, setShowGlossary] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
-
-  if (collapsed) {
-    return (
-      <div className="w-14 h-full bg-bg-secondary border-r border-border flex flex-col shrink-0 items-center py-3 gap-1">
-        <button onClick={() => setCollapsed(false)} className="w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors mb-3">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        {gameList.map((game) => (
-          <button
-            key={game.id}
-            onClick={() => setActiveGame(game.id)}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center text-base transition-all ${
-              activeGameId === game.id
-                ? 'bg-bg-hover text-text-primary'
-                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-            }`}
-            title={game.name}
-          >
-            {game.icon}
-          </button>
-        ))}
-        <div className="h-px w-6 bg-border my-2" />
-        {viewButtons.map((btn) => (
-          <button
-            key={btn.id}
-            onClick={() => setView(btn.id)}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-              view === btn.id ? 'bg-bg-hover text-text-primary' : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-            }`}
-            title={btn.label}
-          >
-            {btn.icon}
-          </button>
-        ))}
-      </div>
-    )
-  }
 
   return (
-    <div className="w-56 h-full bg-bg-secondary border-r border-border flex flex-col shrink-0">
-      {/* Logo */}
-      <div className="px-4 py-3.5 border-b border-border flex items-center justify-between">
-        <button onClick={onShowWelcome} className="text-left group">
-          <h1 className="text-base font-bold tracking-tight group-hover:opacity-80 transition-opacity">
-            <span className="text-text-primary">Model</span>
-            <span className={`text-${activeGame.accentColor}`}>Arena</span>
-          </h1>
-        </button>
-        <button
-          onClick={() => setCollapsed(true)}
-          className="w-7 h-7 rounded-md flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
-          title="Collapse sidebar"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-        </button>
+    <aside className="w-64 h-full bg-bg-primary border-r border-border flex flex-col shrink-0 pt-4 pb-6">
+      {/* Neural Engine Header */}
+      <div className="px-6 mb-8">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary status-pulse" />
+          <span className="font-label text-[10px] uppercase tracking-[0.2em] text-text-primary/60">Neural Engine</span>
+        </div>
+        <p className="text-[10px] text-text-primary/30 font-mono uppercase tracking-widest">STABLE v2.4.0</p>
       </div>
 
-      {/* Game Library */}
-      <div className="px-2 py-3 flex-1 overflow-y-auto">
-        <p className="text-[11px] uppercase tracking-widest text-text-muted mb-2 px-2 font-medium">Games</p>
-        <div className="space-y-0.5">
-          {gameList.map((game) => (
+      {/* Game List */}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto">
+        {gameList.map((game) => {
+          const isActive = activeGameId === game.id
+          return (
             <button
               key={game.id}
               onClick={() => setActiveGame(game.id)}
-              className={`w-full text-left px-2.5 py-2 rounded-lg text-[13px] transition-all flex items-center gap-2.5 ${
-                activeGameId === game.id
-                  ? 'bg-bg-hover text-text-primary'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+              className={`w-full flex items-center gap-4 px-6 py-3 transition-all duration-300 font-label text-[10px] uppercase tracking-[0.15em] ${
+                isActive
+                  ? 'bg-primary/5 text-primary border-r-2 border-primary font-bold'
+                  : 'text-text-primary/40 hover:text-text-primary/80 hover:bg-bg-hover font-medium'
               }`}
             >
-              <span className="text-base w-6 text-center">{game.icon}</span>
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate leading-tight">{game.name}</div>
-                <div className="text-[11px] text-text-muted leading-tight">{game.difficulty}</div>
-              </div>
-              {activeGameId === game.id && (
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: game.accentColor }} />
-              )}
+              <span
+                className="material-symbols-outlined text-lg"
+                style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
+              >
+                {GAME_ICONS[game.id] || 'videogame_asset'}
+              </span>
+              <span>{game.name}</span>
             </button>
-          ))}
-        </div>
+          )
+        })}
 
-        {/* View Switcher */}
-        <p className="text-[11px] uppercase tracking-widest text-text-muted mb-2 px-2 mt-6 font-medium">View</p>
-        <div className="space-y-0.5">
-          {viewButtons.map((btn) => (
+        {/* Divider */}
+        <div className="h-px mx-6 my-3 bg-border" />
+
+        {/* View Buttons */}
+        {viewButtons.map((btn) => {
+          const isActive = view === btn.id
+          return (
             <button
               key={btn.id}
               onClick={() => setView(btn.id)}
-              className={`w-full text-left px-2.5 py-2 rounded-lg text-[13px] transition-all flex items-center gap-2.5 ${
-                view === btn.id
-                  ? 'bg-bg-hover text-text-primary'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+              className={`w-full flex items-center gap-4 px-6 py-3 transition-all duration-300 font-label text-[10px] uppercase tracking-[0.15em] ${
+                isActive
+                  ? 'bg-primary/5 text-primary border-r-2 border-primary font-bold'
+                  : 'text-text-primary/40 hover:text-text-primary/80 hover:bg-bg-hover font-medium'
               }`}
             >
-              <span className="text-text-muted w-6 flex items-center justify-center">{btn.icon}</span>
-              <span className="font-medium">{btn.label}</span>
+              <span
+                className="material-symbols-outlined text-lg"
+                style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
+              >
+                {btn.icon}
+              </span>
+              <span>{btn.label}</span>
             </button>
-          ))}
-        </div>
+          )
+        })}
+      </nav>
 
-        {/* Help section */}
-        <p className="text-[11px] uppercase tracking-widest text-text-muted mb-2 px-2 mt-6 font-medium">Learn</p>
-        <div className="space-y-0.5">
-          <button
-            onClick={() => setShowGlossary(!showGlossary)}
-            className={`w-full text-left px-2.5 py-2 rounded-lg text-[13px] transition-all flex items-center gap-2.5 ${
-              showGlossary ? 'bg-bg-hover text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-            }`}>
-            <span className="text-text-muted w-6 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            </span>
-            <span className="font-medium">ML Glossary</span>
-          </button>
-          <button
-            onClick={onShowWelcome}
-            className="w-full text-left px-2.5 py-2 rounded-lg text-[13px] transition-all flex items-center gap-2.5 text-text-secondary hover:text-text-primary hover:bg-bg-hover">
-            <span className="text-text-muted w-6 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </span>
-            <span className="font-medium">Home</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Glossary panel */}
+      {/* Glossary Expandable */}
       <AnimatePresence>
         {showGlossary && (
-          <motion.div
+          <M.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 280, opacity: 1 }}
+            animate={{ height: 260, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="border-t border-border overflow-hidden"
           >
             <ConceptGlossary />
-          </motion.div>
+          </M.div>
         )}
       </AnimatePresence>
 
-      {/* Footer */}
-      <div className="px-4 py-2.5 border-t border-border">
-        <p className="text-[11px] text-text-muted text-center font-mono">
-          100% client-side ML
-        </p>
+      {/* Bottom Actions */}
+      <div className="px-6 mt-auto space-y-4">
+        <button
+          onClick={() => { clearAll(); setView('builder') }}
+          className="w-full py-3.5 bg-primary text-on-primary font-label text-[10px] uppercase tracking-[0.2em] font-black rounded-lg hover:brightness-110 transition-all shadow-lg shadow-primary/10 neural-glow"
+        >
+          New Model
+        </button>
+
+        <div className="pt-4 border-t border-border space-y-2">
+          <button
+            onClick={() => setShowGlossary(!showGlossary)}
+            className="flex items-center gap-3 text-text-primary/30 hover:text-text-primary/60 cursor-pointer transition-colors w-full"
+          >
+            <span className="material-symbols-outlined text-base">menu_book</span>
+            <span className="font-label text-[9px] uppercase tracking-widest">ML Glossary</span>
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-3 text-text-primary/30 hover:text-text-primary/60 cursor-pointer transition-colors w-full"
+          >
+            <span className="material-symbols-outlined text-base">home</span>
+            <span className="font-label text-[9px] uppercase tracking-widest">Home</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </aside>
   )
 }

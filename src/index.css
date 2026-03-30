@@ -1,36 +1,57 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #050508;
-  --color-bg-secondary: #0A0A10;
-  --color-bg-tertiary: #111118;
-  --color-bg-card: #0D0D14;
-  --color-bg-elevated: #161620;
-  --color-bg-hover: rgba(255, 255, 255, 0.04);
-  --color-bg-active: rgba(255, 255, 255, 0.06);
+  /* Neural Command Center — Core Palette */
+  --color-bg-primary: #0b0b0e;
+  --color-bg-secondary: #0e0e12;
+  --color-bg-tertiary: #121217;
+  --color-bg-card: #19191e;
+  --color-bg-elevated: #1f1f25;
+  --color-bg-hover: rgba(255, 255, 255, 0.03);
+  --color-bg-active: rgba(255, 255, 255, 0.05);
 
-  --color-border: rgba(255, 255, 255, 0.06);
-  --color-border-light: rgba(255, 255, 255, 0.10);
-  --color-border-focus: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(255, 255, 255, 0.05);
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border-focus: rgba(255, 255, 255, 0.15);
 
-  --color-text-primary: #F0F0F6;
-  --color-text-secondary: #8A8AA3;
-  --color-text-muted: #505068;
-  --color-text-ghost: #363650;
+  --color-text-primary: #f3eff6;
+  --color-text-secondary: #8e8c91;
+  --color-text-muted: #6B6B88;
+  --color-text-ghost: #48474c;
 
+  /* Signature Neural Green */
+  --color-primary: #aaffdc;
+  --color-primary-bright: #00fdc1;
+  --color-primary-dim: #00edb4;
+  --color-on-primary: #00654b;
+
+  /* Secondary — Electric Blue */
+  --color-secondary: #6e9bff;
+  --color-secondary-dim: #0f6df3;
+  --color-on-secondary: #001d4e;
+
+  /* Tertiary — Plasma Purple */
+  --color-tertiary: #e966ff;
+  --color-tertiary-dim: #c500e6;
+  --color-on-tertiary: #3c0048;
+
+  /* Per-game accents */
   --color-accent-snake: #22C55E;
   --color-accent-flappy: #F97316;
   --color-accent-chess: #EAB308;
   --color-accent-cartpole: #3B82F6;
   --color-accent-2048: #A855F7;
+  --game-accent: #00FFC2;
 
-  --color-error: #EF4444;
-  --color-success: #22C55E;
+  --color-error: #ff716c;
+  --color-success: #00FFC2;
   --color-warning: #EAB308;
 
   --font-family-mono: 'JetBrains Mono', monospace;
   --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-label: 'Space Grotesk', system-ui, sans-serif;
 }
 
 * {
@@ -39,10 +60,14 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
-  height: 100%;
+html, body {
+  min-height: 100%;
   width: 100%;
-  overflow: hidden;
+}
+
+#root {
+  min-height: 100%;
+  width: 100%;
 }
 
 body {
@@ -53,39 +78,56 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Noise texture overlay */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
 }
 
-/* Scrollbar — Linear style */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
 
 .font-mono { font-family: var(--font-family-mono); }
+.font-label { font-family: var(--font-family-label); }
 
-/* Card inner highlight — Linear signature */
+/* Grid background pattern */
+.grid-bg {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Glass panel effect */
+.glass-panel {
+  background: rgba(25, 25, 30, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Card inner highlight */
 .card-inset {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+/* HUD overlay style */
+.hud-overlay {
+  background: rgba(18, 18, 23, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(170, 255, 220, 0.15);
+  box-shadow: inset 0 0 10px rgba(170, 255, 220, 0.05);
 }
 
 /* Gradient mesh background */
 .mesh-bg {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(0, 253, 193, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(110, 155, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(233, 102, 255, 0.03) 0%, transparent 50%);
 }
 
 /* Per-game glow utilities */
@@ -95,11 +137,9 @@ body::before {
 .glow-2048 { box-shadow: 0 0 20px rgba(168, 85, 247, 0.12), 0 0 60px rgba(168, 85, 247, 0.04); }
 .glow-chess { box-shadow: 0 0 20px rgba(234, 179, 8, 0.12), 0 0 60px rgba(234, 179, 8, 0.04); }
 
-/* Glass card effect */
-.glass {
-  background: rgba(13, 13, 20, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+/* Neural glow for primary elements */
+.neural-glow {
+  box-shadow: 0 0 20px rgba(170, 255, 220, 0.25), 0 0 60px rgba(170, 255, 220, 0.08);
 }
 
 /* Gradient border mask */
@@ -117,4 +157,43 @@ body::before {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+}
+
+/* Kinetic pattern for blueprint cards */
+.kinetic-pattern {
+  background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+  background-size: 12px 12px;
+}
+
+/* Champion card glow */
+.champion-glow {
+  box-shadow: 0 0 40px -10px rgba(170, 255, 220, 0.2), 0 0 20px -5px rgba(233, 102, 255, 0.1);
+}
+
+/* Status pulse animation */
+.status-pulse {
+  animation: statusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* Blueprint card hover */
+.blueprint-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.blueprint-card:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 194, 0.05) 0%, rgba(255,255,255,0) 100%);
+  border-color: rgba(0, 255, 194, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Kinetic banner for celebrations */
+.kinetic-banner {
+  background: linear-gradient(135deg, rgba(170, 255, 220, 0.1) 0%, rgba(170, 255, 220, 0.02) 100%);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(170, 255, 220, 0.3);
+  box-shadow: 0 0 40px rgba(170, 255, 220, 0.1), inset 0 0 20px rgba(170, 255, 220, 0.05);
 }

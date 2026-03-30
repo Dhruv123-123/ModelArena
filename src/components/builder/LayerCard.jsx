@@ -1,20 +1,24 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as M, AnimatePresence } from 'framer-motion'
 import useModelStore from '../../stores/useModelStore'
 import LayerExplainer from '../learning/LayerExplainer'
 
 const LAYER_COLORS = {
-  dense: '#3B82F6',
+  dense: 'var(--color-secondary)',
   conv2d: '#8B5CF6',
-  dropout: '#F59E0B',
-  batchnorm: '#10B981',
-  flatten: '#EC4899',
+  dropout: 'var(--color-warning)',
+  batchnorm: 'var(--color-primary)',
+  flatten: 'var(--color-tertiary)',
   activation: '#06B6D4',
 }
 
 const LAYER_ICONS = {
-  dense: '\u25A3', conv2d: '\u229E', dropout: '\u25CC',
-  batchnorm: '\u2261', flatten: '\u25AC', activation: '\u0192',
+  dense: 'hub',
+  conv2d: 'grid_view',
+  dropout: 'blur_on',
+  batchnorm: 'equalizer',
+  flatten: 'view_stream',
+  activation: 'bolt',
 }
 
 const ACTIVATIONS = ['relu', 'sigmoid', 'tanh', 'leaky_relu', 'swish', 'elu', 'linear']
@@ -22,13 +26,13 @@ const ACTIVATIONS = ['relu', 'sigmoid', 'tanh', 'leaky_relu', 'swish', 'elu', 'l
 function NumberInput({ label, value, onChange, min = 1, max = 1024, step = 1 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-text-secondary font-medium">{label}</span>
+      <span className="text-[11px] text-text-secondary font-label uppercase tracking-wider">{label}</span>
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="w-24 px-3 py-1.5 bg-bg-primary border border-border rounded-lg text-xs font-mono text-text-primary focus:border-border-light focus:outline-none"
+        className="w-24 px-3 py-1.5 bg-bg-primary border border-border rounded-lg text-xs font-mono text-text-primary focus:border-primary/50 focus:outline-none transition-colors"
       />
     </div>
   )
@@ -37,11 +41,11 @@ function NumberInput({ label, value, onChange, min = 1, max = 1024, step = 1 }) 
 function SelectInput({ label, value, onChange, options }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-text-secondary font-medium">{label}</span>
+      <span className="text-[11px] text-text-secondary font-label uppercase tracking-wider">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-28 px-3 py-1.5 bg-bg-primary border border-border rounded-lg text-xs font-mono text-text-primary focus:border-border-light focus:outline-none"
+        className="w-28 px-3 py-1.5 bg-bg-primary border border-border rounded-lg text-xs font-mono text-text-primary focus:border-primary/50 focus:outline-none transition-colors"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>{opt}</option>
@@ -51,10 +55,20 @@ function SelectInput({ label, value, onChange, options }) {
   )
 }
 
-export default function LayerCard({ layer, index, shape, isSelected, hasError, errorMessage }) {
+export default function LayerCard({
+  layer,
+  index,
+  shape,
+  isSelected,
+  hasError,
+  errorMessage,
+  dragHandleProps,
+  isDragging = false,
+}) {
   const { selectLayer, updateLayer, removeLayer } = useModelStore()
   const [showExplainer, setShowExplainer] = useState(false)
   const color = LAYER_COLORS[layer.type] || '#666'
+  const icon = LAYER_ICONS[layer.type] || 'layers'
 
   const renderConfig = () => {
     if (!isSelected) return null
@@ -104,83 +118,98 @@ export default function LayerCard({ layer, index, shape, isSelected, hasError, e
   }
 
   return (
-    <motion.div
+    <M.div
       layout
       initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0, scale: isDragging ? 1.02 : 1 }}
       exit={{ opacity: 0, y: 10 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
       onClick={() => selectLayer(isSelected ? null : layer.id)}
       className={`rounded-xl border cursor-pointer transition-all ${
         hasError ? 'border-error/50 bg-error/5'
-          : isSelected ? 'border-border-light bg-bg-hover'
+          : isSelected ? 'border-primary/30 bg-bg-hover'
           : 'border-border bg-bg-card hover:border-border-light'
-      }`}
+      } ${isDragging ? 'shadow-lg ring-1 ring-primary/20 z-10' : ''}`}
     >
       <div className="px-4 py-3 flex items-center gap-3">
+        {dragHandleProps && (
+          <button
+            type="button"
+            className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-text-muted hover:text-text-secondary cursor-grab active:cursor-grabbing touch-none border border-transparent hover:border-border hover:bg-bg-hover"
+            aria-label="Drag to reorder"
+            {...dragHandleProps}
+            onClick={(e) => {
+              dragHandleProps.onClick?.(e)
+              e.stopPropagation()
+            }}
+          >
+            <span className="material-symbols-outlined text-sm">drag_indicator</span>
+          </button>
+        )}
         <span
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-mono font-bold shrink-0"
-          style={{ backgroundColor: color + '20', color }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ backgroundColor: color + '18', color }}
         >
-          {LAYER_ICONS[layer.type]}
+          <span className="material-symbols-outlined text-lg">{icon}</span>
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-text-primary capitalize">{layer.type}</span>
-            <span className="text-xs font-mono text-text-muted truncate">{getSummary()}</span>
+            <span className="text-sm font-bold text-text-primary capitalize font-label tracking-tight">{layer.type}</span>
+            <span className="text-[10px] font-mono text-text-muted truncate">{getSummary()}</span>
           </div>
           {shape && (
-            <span className={`text-xs font-mono ${hasError ? 'text-error' : 'text-text-muted'}`}>
+            <span className={`text-[10px] font-mono ${hasError ? 'text-error' : 'text-text-muted'}`}>
               &rarr; [{shape.join(', ')}]
             </span>
           )}
         </div>
-        <span className="text-xs font-mono text-text-muted">#{index + 1}</span>
+        <span className="text-[10px] font-mono text-text-ghost bg-bg-hover px-2 py-0.5 rounded-full">#{index + 1}</span>
         <button
           onClick={(e) => { e.stopPropagation(); setShowExplainer(!showExplainer) }}
-          className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors ${
-            showExplainer ? 'text-accent-cartpole bg-accent-cartpole/10' : 'text-text-muted hover:text-accent-cartpole hover:bg-accent-cartpole/10'
+          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+            showExplainer ? 'text-secondary bg-secondary/10' : 'text-text-muted hover:text-secondary hover:bg-secondary/10'
           }`}
           title="What does this layer do?"
         >
-          ?
+          <span className="material-symbols-outlined text-sm">help</span>
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); removeLayer(layer.id) }}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-error hover:bg-error/10 transition-colors text-sm"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-error hover:bg-error/10 transition-colors"
         >
-          &times;
+          <span className="material-symbols-outlined text-sm">close</span>
         </button>
       </div>
 
       {hasError && errorMessage && (
         <div className="px-4 pb-3">
-          <p className="text-xs text-error">{errorMessage}</p>
+          <p className="text-[11px] text-error font-mono">{errorMessage}</p>
         </div>
       )}
 
       {isSelected && (
-        <motion.div
+        <M.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           className="px-4 pb-4"
         >
           {renderConfig()}
-        </motion.div>
+        </M.div>
       )}
 
       <AnimatePresence>
         {showExplainer && (
-          <motion.div
+          <M.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="px-3 pb-3"
           >
             <LayerExplainer layerType={layer.type} />
-          </motion.div>
+          </M.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </M.div>
   )
 }

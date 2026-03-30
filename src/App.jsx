@@ -1,40 +1,31 @@
 import { useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './components/layout/MainLayout'
 import WelcomeScreen from './components/welcome/WelcomeScreen'
-import GuidedTour, { shouldShowTour } from './components/welcome/GuidedTour'
+import GuidedTour from './components/welcome/GuidedTour'
+import { shouldShowTour } from './components/welcome/shouldShowTour'
+import DemoView from './components/demo/DemoView'
 
-export default function App() {
-  const [showWelcome, setShowWelcome] = useState(() => {
-    return !localStorage.getItem('modelarena-visited')
-  })
-  const [showTour, setShowTour] = useState(false)
-
-  const handleDismissWelcome = () => {
-    localStorage.setItem('modelarena-visited', 'true')
-    setShowWelcome(false)
-    if (shouldShowTour()) {
-      setShowTour(true)
-    }
-  }
-
-  const handleShowWelcome = () => {
-    setShowWelcome(true)
-  }
+function AppShell() {
+  const [showTour, setShowTour] = useState(() => shouldShowTour())
 
   return (
-    <>
-      <AnimatePresence mode="wait">
-        {showWelcome ? (
-          <WelcomeScreen key="welcome" onDismiss={handleDismissWelcome} />
-        ) : (
-          <MainLayout key="main" onShowWelcome={handleShowWelcome} />
-        )}
-      </AnimatePresence>
-
-      {showTour && !showWelcome && (
+    <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-bg-primary">
+      <MainLayout />
+      {showTour && (
         <GuidedTour onComplete={() => setShowTour(false)} />
       )}
-    </>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<WelcomeScreen />} />
+      <Route path="/app" element={<AppShell />} />
+      <Route path="/demo" element={<DemoView />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }

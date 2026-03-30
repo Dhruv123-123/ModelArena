@@ -6,7 +6,7 @@ export default class GameEngine {
     this.steps = 0
   }
   reset() { throw new Error('reset() must be implemented') }
-  step(action) { throw new Error('step() must be implemented') }
+  step() { throw new Error('step() must be implemented') }
   getState() { throw new Error('getState() must be implemented') }
   getStateVector() { throw new Error('getStateVector() must be implemented') }
   getScore() { return this.score }

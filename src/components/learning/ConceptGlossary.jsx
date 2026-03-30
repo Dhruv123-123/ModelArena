@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as M, AnimatePresence } from 'framer-motion'
 
 const CONCEPTS = [
   { term: 'Activation Function', def: 'A mathematical function applied after each layer that introduces non-linearity. Without it, stacking layers would be useless — the whole network would just be one big linear function. ReLU (Rectified Linear Unit) is the most common: it outputs the input if positive, 0 if negative.' },
@@ -32,24 +32,29 @@ export default function ConceptGlossary() {
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-border">
-        <input value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search concepts..."
-          className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:border-border-light focus:outline-none" />
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-ghost text-lg">search</span>
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search concepts..."
+            className="w-full pl-10 pr-3 py-2.5 bg-bg-primary border border-border rounded-lg text-sm font-mono text-text-primary placeholder:text-text-ghost focus:border-primary/30 focus:outline-none transition-colors" />
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
         {filtered.map(concept => (
           <div key={concept.term}>
             <button onClick={() => setExpanded(expanded === concept.term ? null : concept.term)}
-              className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-bg-hover transition-colors flex items-center justify-between">
-              <span className="text-sm font-medium text-text-primary">{concept.term}</span>
-              <span className="text-xs text-text-muted">{expanded === concept.term ? '−' : '+'}</span>
+              className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-bg-hover transition-colors flex items-center justify-between group">
+              <span className="text-sm font-bold text-text-primary font-label tracking-tight">{concept.term}</span>
+              <span className="material-symbols-outlined text-text-muted text-sm group-hover:text-text-secondary transition-colors">
+                {expanded === concept.term ? 'expand_less' : 'expand_more'}
+              </span>
             </button>
             <AnimatePresence>
               {expanded === concept.term && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                <M.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   className="px-4 pb-3">
-                  <p className="text-xs text-text-secondary leading-relaxed">{concept.def}</p>
-                </motion.div>
+                  <p className="text-[11px] text-text-secondary leading-relaxed">{concept.def}</p>
+                </M.div>
               )}
             </AnimatePresence>
           </div>

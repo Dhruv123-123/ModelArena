@@ -17,29 +17,31 @@ export default function HyperparamConfig() {
   const { hyperparams, setHyperparam, isTraining } = useTrainingStore()
 
   return (
-    <div className="rounded-xl p-4 card-inset" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-[11px] uppercase tracking-widest text-text-muted mb-4 font-medium">Hyperparameters</p>
+    <div className="rounded-xl p-5 bg-bg-hover border border-border">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-secondary text-lg">tune</span>
+        <p className="font-label text-[10px] uppercase tracking-[0.2em] text-text-primary font-black">Hyperparameters</p>
+      </div>
       <div className="space-y-3">
         {PARAMS.map(({ key, label, min, max, step }) => (
           <div key={key}>
-            <label className="text-[11px] text-text-muted font-medium block mb-1">{label}</label>
+            <label className="font-label text-[10px] text-text-muted uppercase tracking-wider font-medium block mb-1">{label}</label>
             <input
               type="number"
               value={hyperparams[key]}
               onChange={(e) => setHyperparam(key, Number(e.target.value))}
               disabled={isTraining}
               min={min} max={max} step={step}
-              className="w-full px-2.5 py-1.5 rounded-md text-xs font-mono text-text-primary focus:outline-none disabled:opacity-30 transition-opacity tabular-nums"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
+              className="w-full px-3 py-2 rounded-lg text-xs font-mono text-text-primary bg-bg-primary border border-border focus:border-primary/30 focus:outline-none disabled:opacity-30 transition-all tabular-nums"
             />
           </div>
         ))}
       </div>
       {isTraining && (
-        <p className="text-[11px] text-text-muted mt-4 text-center">Stop training to edit</p>
+        <div className="flex items-center gap-2 mt-4 justify-center">
+          <span className="material-symbols-outlined text-text-ghost text-sm">lock</span>
+          <p className="text-[10px] text-text-ghost font-label">Stop training to edit</p>
+        </div>
       )}
     </div>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as M, AnimatePresence } from 'framer-motion'
 import useGameStore, { GAMES } from '../../stores/useGameStore'
 
 const TUTORIALS = {
@@ -56,25 +56,37 @@ export default function GameTutorial() {
   const step = tutorial.steps[stepIdx]
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-bg-card border border-border rounded-xl p-5 mb-5">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs uppercase tracking-widest text-text-muted font-medium">Tutorial — Step {stepIdx + 1}/{tutorial.steps.length}</p>
-        <button onClick={() => setDismissed(d => ({ ...d, [activeGameId]: true }))}
-          className="text-xs text-text-muted hover:text-text-primary transition-colors px-2 py-1 rounded-lg hover:bg-bg-hover">Dismiss</button>
+    <M.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="bg-bg-hover border border-border rounded-xl p-5 mb-5 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-32 h-32 bg-secondary/5 blur-[60px] pointer-events-none" />
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary text-lg">school</span>
+            <p className="font-label text-[10px] uppercase tracking-[0.2em] text-text-muted font-black">Tutorial — Step {stepIdx + 1}/{tutorial.steps.length}</p>
+          </div>
+          <button onClick={() => setDismissed(d => ({ ...d, [activeGameId]: true }))}
+            className="text-[10px] font-label uppercase tracking-wider text-text-muted hover:text-text-primary transition-colors px-2 py-1 rounded-lg hover:bg-bg-active">Dismiss</button>
+        </div>
+        <AnimatePresence mode="wait">
+          <M.div key={stepIdx} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+            <h3 className="text-sm font-black text-text-primary mb-1.5 font-label tracking-tight">{step.title}</h3>
+            <p className="text-[12px] text-text-secondary leading-relaxed">{step.text}</p>
+          </M.div>
+        </AnimatePresence>
+        <div className="flex gap-2 mt-4">
+          <button disabled={stepIdx === 0} onClick={() => setStepIdx(s => s - 1)}
+            className="px-4 py-1.5 text-[10px] font-label uppercase tracking-wider rounded-lg border border-border text-text-muted disabled:opacity-30 hover:text-text-primary hover:border-primary/20 transition-colors flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm">chevron_left</span>
+            Prev
+          </button>
+          <button disabled={stepIdx === tutorial.steps.length - 1} onClick={() => setStepIdx(s => s + 1)}
+            className="px-4 py-1.5 text-[10px] font-label uppercase tracking-wider rounded-lg border border-border text-text-muted disabled:opacity-30 hover:text-text-primary hover:border-primary/20 transition-colors flex items-center gap-1">
+            Next
+            <span className="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        </div>
       </div>
-      <AnimatePresence mode="wait">
-        <motion.div key={stepIdx} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-          <h3 className="text-sm font-semibold text-text-primary mb-1.5">{step.title}</h3>
-          <p className="text-sm text-text-secondary leading-relaxed">{step.text}</p>
-        </motion.div>
-      </AnimatePresence>
-      <div className="flex gap-2 mt-4">
-        <button disabled={stepIdx === 0} onClick={() => setStepIdx(s => s - 1)}
-          className="px-4 py-1.5 text-xs rounded-lg border border-border text-text-muted disabled:opacity-30 hover:text-text-primary hover:border-border-light transition-colors">← Prev</button>
-        <button disabled={stepIdx === tutorial.steps.length - 1} onClick={() => setStepIdx(s => s + 1)}
-          className="px-4 py-1.5 text-xs rounded-lg border border-border text-text-muted disabled:opacity-30 hover:text-text-primary hover:border-border-light transition-colors">Next →</button>
-      </div>
-    </motion.div>
+    </M.div>
   )
 }

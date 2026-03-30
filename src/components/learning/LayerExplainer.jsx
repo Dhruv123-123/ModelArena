@@ -37,9 +37,12 @@ export default function LayerExplainer({ layerType }) {
 
   return (
     <div className="bg-bg-card border border-border rounded-xl p-4 space-y-2.5">
-      <h4 className="text-sm font-semibold text-text-primary">{info.title}</h4>
-      <p className="text-xs text-accent-cartpole italic leading-relaxed">{info.analogy}</p>
-      <p className="text-xs text-text-secondary leading-relaxed">{info.detail}</p>
+      <div className="flex items-center gap-2">
+        <span className="material-symbols-outlined text-secondary text-base">auto_awesome</span>
+        <h4 className="text-sm font-black text-text-primary font-label tracking-tight">{info.title}</h4>
+      </div>
+      <p className="text-[11px] text-secondary italic leading-relaxed">{info.analogy}</p>
+      <p className="text-[11px] text-text-secondary leading-relaxed">{info.detail}</p>
     </div>
   )
 }

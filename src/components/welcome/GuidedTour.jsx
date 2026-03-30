@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { motion as M, AnimatePresence } from 'framer-motion'
 import useGameStore from '../../stores/useGameStore'
 import useModelStore from '../../stores/useModelStore'
 
@@ -52,7 +52,7 @@ const TOUR_STEPS = [
     id: 'go-train',
     target: 'view-train',
     title: 'Step 3: Train Your Model',
-    content: 'Click "Train" in the sidebar to start training. Hit "Start Training" and watch the magic happen!',
+    content: 'Click "Train" in the pipeline to start training. Hit "Start Training" and watch the magic happen!',
     action: 'goToTrain',
     position: 'right',
     highlight: 'train-button',
@@ -61,7 +61,7 @@ const TOUR_STEPS = [
     id: 'watch-train',
     target: 'training-view',
     title: 'Watch It Learn',
-    content: "You'll see live charts showing the reward climbing over episodes. The snake game view shows your model playing in real-time.",
+    content: "You'll see live charts showing the reward climbing over episodes. The game view shows your model playing in real-time.",
     action: null,
     position: 'bottom',
   },
@@ -69,7 +69,7 @@ const TOUR_STEPS = [
     id: 'go-play',
     target: 'view-play',
     title: 'Step 4: Watch It Play',
-    content: 'After training, switch to "Watch Play" to see your model in action. You can also play the game yourself and compare!',
+    content: 'After training, switch to "Watch" to see your model in action. You can also play the game yourself and compare!',
     action: 'goToPlay',
     position: 'right',
   },
@@ -77,7 +77,7 @@ const TOUR_STEPS = [
     id: 'done',
     target: null,
     title: "You're Ready!",
-    content: "That's the core loop: Design → Train → Watch. Try different architectures, tweak hyperparameters, and see what scores you can achieve. Check the Leaderboard to track your progress!",
+    content: "That's the core loop: Build → Train → Watch → Compete. Try different architectures, tweak hyperparameters, and see what scores you can achieve!",
     action: null,
     position: 'center',
   },
@@ -92,7 +92,6 @@ export default function GuidedTour({ onComplete }) {
   const step = TOUR_STEPS[currentStep]
 
   const handleNext = () => {
-    // Perform actions for current step
     if (step.action === 'loadPreset') {
       setActiveGame('snake')
       loadPreset('starter')
@@ -128,16 +127,16 @@ export default function GuidedTour({ onComplete }) {
       {visible && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <M.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
             onClick={(e) => e.stopPropagation()}
           />
 
           {/* Tour card */}
-          <motion.div
+          <M.div
             key={step.id}
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -152,11 +151,11 @@ export default function GuidedTour({ onComplete }) {
                 : 'top-1/2 left-1/2 -translate-x-1/2'
             }`}
           >
-            <div className="bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden">
+            <div className="glass-panel rounded-xl shadow-2xl overflow-hidden border border-primary/10">
               {/* Progress bar */}
               <div className="h-1 bg-bg-primary">
-                <motion.div
-                  className="h-full bg-accent-snake"
+                <M.div
+                  className="h-full bg-primary"
                   animate={{ width: `${((currentStep + 1) / TOUR_STEPS.length) * 100}%` }}
                   transition={{ duration: 0.3 }}
                 />
@@ -164,41 +163,44 @@ export default function GuidedTour({ onComplete }) {
 
               <div className="p-5">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-mono text-text-muted">
+                  <span className="text-[10px] font-mono text-text-muted tabular-nums">
                     {currentStep + 1} / {TOUR_STEPS.length}
                   </span>
                   <button
                     onClick={handleDismiss}
-                    className="text-[10px] text-text-muted hover:text-text-primary transition-colors"
+                    className="text-[10px] font-label uppercase tracking-wider text-text-muted hover:text-text-primary transition-colors"
                   >
                     Skip Tour
                   </button>
                 </div>
 
-                <h3 className="text-base font-semibold text-text-primary mb-2">{step.title}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed mb-4">{step.content}</p>
+                <h3 className="text-base font-black text-text-primary mb-2 font-label tracking-tight">{step.title}</h3>
+                <p className="text-[12px] text-text-secondary leading-relaxed mb-4">{step.content}</p>
 
                 <div className="flex items-center gap-2">
                   {currentStep > 0 && (
                     <button
                       onClick={handlePrev}
-                      className="px-3 py-1.5 rounded-lg text-xs text-text-muted border border-border hover:text-text-primary transition-colors"
+                      className="px-3 py-1.5 rounded-lg text-[10px] font-label uppercase tracking-wider text-text-muted border border-border hover:text-text-primary hover:border-primary/20 transition-colors flex items-center gap-1"
                     >
-                      ← Back
+                      <span className="material-symbols-outlined text-sm">chevron_left</span>
+                      Back
                     </button>
                   )}
-                  <motion.button
+                  <M.button
+                    type="button"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleNext}
-                    className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-accent-snake text-bg-primary hover:opacity-90 transition-opacity"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-[10px] font-label uppercase tracking-[0.2em] font-black bg-primary text-on-primary hover:brightness-110 transition-all neural-glow flex items-center justify-center gap-1"
                   >
                     {currentStep === TOUR_STEPS.length - 1
                       ? "Let's Go!"
                       : step.action
-                      ? 'Do It & Continue →'
-                      : 'Next →'}
-                  </motion.button>
+                      ? 'Do It & Continue'
+                      : 'Next'}
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </M.button>
                 </div>
               </div>
             </div>
@@ -207,13 +209,9 @@ export default function GuidedTour({ onComplete }) {
             {!isCenter && step.position === 'right' && (
               <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-0 h-0 border-t-8 border-b-8 border-r-8 border-transparent border-r-border" />
             )}
-          </motion.div>
+          </M.div>
         </>
       )}
     </AnimatePresence>
   )
-}
-
-export function shouldShowTour() {
-  return !localStorage.getItem('modelarena-tour-completed')
 }

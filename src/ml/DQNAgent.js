@@ -79,16 +79,14 @@ export default class DQNAgent {
 
     const batch = this.replayBuffer.sample(this.hp.batchSize)
 
-    // Compute target Q-values inside tidy to avoid leaks
-    const targetData = tf.tidy(() => {
+    // Compute target Q-values and state array inside tidy — everything stays as plain JS arrays
+    const { targetData, stateData } = tf.tidy(() => {
       const states = tf.tensor2d(batch.map(e => e.state))
       const nextStates = tf.tensor2d(batch.map(e => e.nextState))
 
-      // Double DQN
-      const nextQOnline = this.onlineModel.predict(nextStates)
-      const bestActions = nextQOnline.argMax(1).dataSync()
+      // Double DQN: use online net to pick best action, target net for Q-value
+      const bestActions = this.onlineModel.predict(nextStates).argMax(1).dataSync()
       const nextQTarget = this.targetModel.predict(nextStates).arraySync()
-
       const currentQ = this.onlineModel.predict(states).arraySync()
 
       for (let i = 0; i < batch.length; i++) {
@@ -99,17 +97,18 @@ export default class DQNAgent {
         }
       }
 
-      return currentQ
+      // Return plain JS arrays — all tensors inside tidy get disposed automatically
+      return { targetData: currentQ, stateData: batch.map(e => e.state) }
     })
 
-    // Create tensors for trainOnBatch, then dispose immediately after
-    const statesTensor = tf.tensor2d(batch.map(e => e.state))
+    // trainOnBatch is async so tensors must be created outside tidy, but we dispose them right after
+    const statesTensor = tf.tensor2d(stateData)
     const targetTensor = tf.tensor2d(targetData)
     const result = await this.onlineModel.trainOnBatch(statesTensor, targetTensor)
     statesTensor.dispose()
     targetTensor.dispose()
 
-    // Dispose result tensor if applicable
+    // Extract loss as a plain number
     let lossValue
     if (typeof result === 'number') {
       lossValue = result
