@@ -1,0 +1,10 @@
+export const GRAVITY = 9.8;
+export const CART_MASS = 1.0;
+export const POLE_MASS = 0.1;
+export const POLE_HALF_LENGTH = 0.5;
+export const FORCE_MAG = 10.0;
+export const TAU = 0.02;
+export const X_THRESHOLD = 2.4;
+export const THETA_THRESHOLD = (12 * Math.PI) / 180;
+export const INPUT_SIZE = 4;
+export const ACTION_SPACE = 2;

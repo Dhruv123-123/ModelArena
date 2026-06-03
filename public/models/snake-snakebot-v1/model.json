@@ -1,0 +1,130 @@
+{
+  "modelTopology": {
+    "class_name": "Sequential",
+    "config": {
+      "name": "snake_snakebot",
+      "layers": [
+        {
+          "class_name": "Dense",
+          "config": {
+            "units": 128,
+            "activation": "relu",
+            "use_bias": true,
+            "kernel_initializer": {
+              "class_name": "GlorotUniform",
+              "config": {
+                "seed": null
+              }
+            },
+            "bias_initializer": {
+              "class_name": "Zeros",
+              "config": {}
+            },
+            "batch_input_shape": [
+              null,
+              20
+            ]
+          },
+          "name": "snake_snakebot_dense_0"
+        },
+        {
+          "class_name": "Dense",
+          "config": {
+            "units": 64,
+            "activation": "relu",
+            "use_bias": true,
+            "kernel_initializer": {
+              "class_name": "GlorotUniform",
+              "config": {
+                "seed": null
+              }
+            },
+            "bias_initializer": {
+              "class_name": "Zeros",
+              "config": {}
+            }
+          },
+          "name": "snake_snakebot_dense_1"
+        },
+        {
+          "class_name": "Dense",
+          "config": {
+            "units": 4,
+            "activation": "linear",
+            "use_bias": true,
+            "kernel_initializer": {
+              "class_name": "GlorotUniform",
+              "config": {
+                "seed": null
+              }
+            },
+            "bias_initializer": {
+              "class_name": "Zeros",
+              "config": {}
+            }
+          },
+          "name": "snake_snakebot_dense_2"
+        }
+      ]
+    },
+    "keras_version": "2.4.0",
+    "backend": "tensorflow"
+  },
+  "weightsManifest": [
+    {
+      "paths": [
+        "weights.bin"
+      ],
+      "weights": [
+        {
+          "name": "snake_snakebot_dense_0/kernel",
+          "shape": [
+            20,
+            128
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "snake_snakebot_dense_0/bias",
+          "shape": [
+            128
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "snake_snakebot_dense_1/kernel",
+          "shape": [
+            128,
+            64
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "snake_snakebot_dense_1/bias",
+          "shape": [
+            64
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "snake_snakebot_dense_2/kernel",
+          "shape": [
+            64,
+            4
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "snake_snakebot_dense_2/bias",
+          "shape": [
+            4
+          ],
+          "dtype": "float32"
+        }
+      ]
+    }
+  ],
+  "format": "layers-model",
+  "generatedBy": "ModelArena generate-models.js",
+  "note": "Placeholder weights — train in browser for real policies"
+}

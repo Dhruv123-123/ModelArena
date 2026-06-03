@@ -1,0 +1,10 @@
+export const WIDTH = 350;
+export const HEIGHT = 500;
+export const GRAVITY = 0.5;
+export const FLAP_FORCE = -8;
+export const PIPE_SPEED = 2.5;
+export const PIPE_SPAWN_INTERVAL = 90;
+export const PIPE_GAP = 140;
+export const BIRD_X = 80;
+export const INPUT_SIZE = 6;
+export const ACTION_SPACE = 2;

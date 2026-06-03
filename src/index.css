@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+@import 'tailwindcss';
+
+@theme {
+  --color-bg-primary: #0b0b0e;
+  --color-bg-panel: #13131a;
+  --color-bg-elevated: #1a1a26;
+  --color-primary: #aaffdc;
+  --color-secondary: #6e9bff;
+  --color-tertiary: #e966ff;
+  --color-text-base: #e8e8f0;
+  --color-text-muted: #6b6b82;
+  --color-border: #2a2a38;
+  --color-accent-snake: #22c55e;
+  --color-accent-flappy: #f97316;
+  --color-accent-cartpole: #3b82f6;
+  --color-accent-2048: #a855f7;
+  --color-accent-chess: #eab308;
+
+  --font-heading: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-body);
+    color: var(--color-text-base);
+    background-color: var(--color-bg-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+}
+
+.glass-panel {
+  background: rgba(19, 19, 26, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.glow-primary {
+  box-shadow: 0 0 20px rgba(170, 255, 220, 0.15);
+}
+
+.font-mono-nums {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes gradient-mesh {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  animation: confetti-fall 2.5s ease-in forwards;
+}
+
+.gradient-mesh {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(170, 255, 220, 0.12), transparent),
+    radial-gradient(ellipse 70% 50% at 80% 70%, rgba(110, 155, 255, 0.1), transparent),
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(233, 102, 255, 0.08), transparent);
+  background-size: 200% 200%;
+  animation: gradient-mesh 18s ease infinite;
+}
