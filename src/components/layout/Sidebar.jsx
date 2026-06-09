@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { GAMES, useGameStore } from '../../stores/useGameStore';
 
 const VIEW_NAV = [
@@ -139,6 +140,24 @@ export function Sidebar({ onOpenGlossary }) {
                 <span>📚</span>
                 <span>Glossary</span>
               </button>
+            </li>
+            <li>
+              <Link
+                to="/demo"
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-sm text-text-muted hover:bg-bg-elevated"
+              >
+                <span>▶️</span>
+                <span>Demo</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/"
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-sm text-text-muted hover:bg-bg-elevated"
+              >
+                <span>🏠</span>
+                <span>Home</span>
+              </Link>
             </li>
           </ul>
         </div>

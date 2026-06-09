@@ -31,9 +31,35 @@ export function WelcomeScreen() {
     navigate('/app');
   };
 
+  const liveUrl = 'https://newarena.vercel.app';
+
   return (
     <div className="min-h-dvh bg-bg-primary text-text-base">
-      <section className="relative overflow-hidden px-6 pb-16 pt-20 sm:px-10 lg:px-16">
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-bg-primary/80 px-6 backdrop-blur-md sm:px-10 lg:px-16">
+        <span
+          className="font-bold text-primary"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          ModelArena
+        </span>
+        <div className="flex items-center gap-4">
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-text-muted transition-colors hover:text-primary"
+          >
+            Live site
+          </a>
+          <Link
+            to="/app"
+            className="rounded-lg bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/25"
+          >
+            Launch app
+          </Link>
+        </div>
+      </header>
+      <section className="relative overflow-hidden px-6 pb-16 pt-12 sm:px-10 lg:px-16">
         <div className="gradient-mesh absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-5xl text-center">
           <motion.h1
@@ -151,7 +177,21 @@ export function WelcomeScreen() {
       </section>
 
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted">
-        Built with TensorFlow.js + React
+        <p>Built with TensorFlow.js + React</p>
+        <p className="mt-2">
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            newarena.vercel.app
+          </a>
+          {' · '}
+          <Link to="/demo" className="hover:text-primary">
+            Watch pre-trained demo
+          </Link>
+        </p>
       </footer>
     </div>
   );

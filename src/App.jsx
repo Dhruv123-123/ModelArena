@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from './components/layout/MainLayout';
+import { DemoView } from './components/demo/DemoView';
 import { WelcomeScreen } from './components/welcome/WelcomeScreen';
 import { shouldShowTour } from './utils/shouldShowTour';
 
@@ -27,7 +28,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<WelcomeScreen />} />
       <Route path="/app" element={<AppShell />} />
-      <Route path="/demo" element={<div className="p-8 text-text-base">Demo coming soon</div>} />
+      <Route path="/demo" element={<DemoView />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -3,7 +3,8 @@
 Build, train, and battle your own neural networks against classic games — entirely in the browser.
 
 **Live app:** [https://newarena.vercel.app](https://newarena.vercel.app)  
-**Repository:** [https://github.com/Dhruv123-123/ModelArena](https://github.com/Dhruv123-123/ModelArena)
+**Repository:** [https://github.com/Dhruv123-123/ModelArena](https://github.com/Dhruv123-123/ModelArena)  
+**Architecture:** [docs/STACK.md](./docs/STACK.md)
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-4.x-FF6F00?logo=tensorflow&logoColor=white)

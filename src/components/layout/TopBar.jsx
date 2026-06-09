@@ -1,4 +1,8 @@
+import { Link, useNavigate } from 'react-router-dom';
 import { getGameById, useGameStore } from '../../stores/useGameStore';
+import { useTrainingStore } from '../../stores/useTrainingStore';
+
+const LIVE_URL = 'https://newarena.vercel.app';
 
 const VIEW_LABELS = {
   builder: 'Model Builder',
@@ -13,8 +17,12 @@ function formatTierValue(value, gameId) {
 }
 
 export function TopBar() {
+  const navigate = useNavigate();
   const activeGameId = useGameStore((s) => s.activeGameId);
   const view = useGameStore((s) => s.view);
+  const isTraining = useTrainingStore((s) => s.isTraining);
+  const currentEpisode = useTrainingStore((s) => s.currentEpisode);
+  const bestScore = useTrainingStore((s) => s.bestScore);
   const game = getGameById(activeGameId);
 
   if (!game) return null;
@@ -48,6 +56,14 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {isTraining && (
+          <div className="hidden items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary md:flex">
+            <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+            Ep {currentEpisode}
+            <span className="text-text-muted">·</span>
+            Best {Number.isFinite(bestScore) ? bestScore.toFixed(1) : '—'}
+          </div>
+        )}
         {(['bronze', 'silver', 'gold']).map((tier) => (
           <span
             key={tier}
@@ -59,6 +75,28 @@ export function TopBar() {
             {formatTierValue(tiers[tier], game.id)}
           </span>
         ))}
+        <button
+          type="button"
+          onClick={() => navigate('/demo')}
+          className="hidden rounded-lg px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-bg-elevated hover:text-primary sm:inline"
+        >
+          Demo
+        </button>
+        <a
+          href={LIVE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden rounded-lg px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-bg-elevated hover:text-primary sm:inline"
+        >
+          Live
+        </a>
+        <Link
+          to="/"
+          className="rounded-lg px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-base"
+          title="Home"
+        >
+          Home
+        </Link>
       </div>
     </header>
   );
